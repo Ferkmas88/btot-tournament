@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #07070a;
+  --ink-800: #14161d;
+  --blood: #c23f32;
+  --amber-gold: #e8b454;
+  --white-soft: #f5f1e8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--ink);
+  color: var(--white-soft);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Film grain overlay applied globally */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: overlay;
+}
+
+/* CRT scanlines (subtle) */
+.scanlines::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.12) 3px,
+    rgba(0, 0, 0, 0) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* Nostalgia vignette */
+.vignette::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.75) 100%);
+  pointer-events: none;
+  z-index: 9997;
+}
+
+/* Utility: red glow border that slowly breathes */
+.breathe-border {
+  box-shadow: 0 0 20px rgba(194, 63, 50, 0.4), inset 0 0 20px rgba(194, 63, 50, 0.1);
+  animation: glow 3s ease-in-out infinite;
+}
+
+/* Diagonal stripes background for sections */
+.stripes-bg {
+  background-image:
+    linear-gradient(135deg,
+      rgba(194, 63, 50, 0.04) 0px,
+      rgba(194, 63, 50, 0.04) 2px,
+      transparent 2px,
+      transparent 12px);
+}
+
+/* Cuban flag stripe accent — top thin red bar */
+.cuba-accent {
+  background: linear-gradient(90deg, var(--blood), var(--amber-gold), var(--blood));
+  height: 3px;
+  width: 100%;
+}
+
+/* Display font fallback stack */
+.font-display {
+  letter-spacing: -0.02em;
+  font-stretch: condensed;
+}
+
+/* Shiny text for premium accents */
+.shine-text {
+  background: linear-gradient(
+    90deg,
+    var(--amber-gold) 0%,
+    #fff5d6 50%,
+    var(--amber-gold) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine 3s linear infinite;
+}
+
+/* Button primary */
+.btn-primary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.75rem;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--blood);
+  color: white;
+  border: 2px solid var(--blood);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  background: var(--blood);
+  box-shadow: 0 0 30px rgba(194, 63, 50, 0.7);
+  transform: translateY(-2px);
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 1px solid var(--amber-gold);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Section heading stamp */
+.stamp-heading {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border: 2px solid var(--blood);
+  color: var(--blood);
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  transform: skew(-6deg);
+  background: rgba(194, 63, 50, 0.05);
+}
+
+/* Timeline line */
+.timeline-line {
+  background: linear-gradient(180deg, transparent, var(--blood) 10%, var(--blood) 90%, transparent);
+}
+
+/* Input style */
+.input-field {
+  width: 100%;
+  background: rgba(20, 22, 29, 0.8);
+  border: 1px solid rgba(194, 63, 50, 0.3);
+  color: var(--white-soft);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-field:focus {
+  border-color: var(--blood);
+  box-shadow: 0 0 0 3px rgba(194, 63, 50, 0.15);
+}
+.input-field::placeholder {
+  color: rgba(245, 241, 232, 0.35);
+}
+
+.label-text {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--amber-gold);
+  display: block;
+  margin-bottom: 0.4rem;
+}
