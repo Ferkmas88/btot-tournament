@@ -16,7 +16,7 @@ export default function Prize() {
           <div className="relative">
             <div className="absolute -inset-4 bg-blood/20 blur-3xl" />
             <img
-              src="/placeholder-mouse.jpeg"
+              src="/generated/prize-mouse.png"
               alt="Logitech G502 HERO"
               className="relative z-10 w-full max-w-md mx-auto"
             />
