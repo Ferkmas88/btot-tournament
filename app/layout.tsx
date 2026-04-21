@@ -22,13 +22,13 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://btot.gg'),
-  title: 'BY THE OLD TIME — Torneo Dota 2 para Cubanos',
+  metadataBase: new URL('https://btot-tournament.vercel.app'),
+  title: 'BTOT Cuba — Torneo de Dota 2 · 2 de mayo',
   description:
-    'El torneo de Dota 2 que honra la historia del juego en Cuba. 5v5, online, 2 de mayo. Premio: Logitech G502 HERO. Regístrate gratis.',
+    'Torneo online de Dota 2 para la comunidad cubana. 5v5, gratis, 2 de mayo. Premio: Logitech G502 HERO. Jugando como en los viejos tiempos.',
   openGraph: {
-    title: 'BY THE OLD TIME — Torneo Dota 2 Cuba',
-    description: 'Regístrate gratis. 2 de mayo. Premio: Logitech G502 HERO.',
+    title: 'BTOT Cuba — Torneo de Dota 2',
+    description: 'Regístrate gratis. 2 de mayo. Premio: Logitech G502 HERO. Jugando como en los viejos tiempos.',
     type: 'website',
   },
   icons: {

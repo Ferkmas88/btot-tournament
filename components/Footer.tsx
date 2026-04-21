@@ -6,11 +6,11 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-3 gap-8 mb-10">
           <div>
-            <div className="font-display text-3xl text-white mb-2 tracking-tight">
-              BY THE <span className="text-blood">OLD TIME</span>
+            <div className="font-display text-4xl text-white mb-2 tracking-tight">
+              BTOT <span className="text-blood">CUBA</span>
             </div>
-            <p className="font-mono text-xs text-white/50 tracking-widest mb-3">
-              BTOT · TORNEO DOTA 2 CUBA
+            <p className="font-mono text-xs text-amber-gold/80 tracking-widest mb-3">
+              JUGANDO COMO EN LOS VIEJOS TIEMPOS
             </p>
             <p className="text-white/60 text-sm">
               Hecho por cubanos, para cubanos. En cualquier parte del mundo donde estés, sigues

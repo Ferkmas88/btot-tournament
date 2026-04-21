@@ -42,3 +42,5 @@ next-env.d.ts
 # loose reference images in project root (not part of site)
 /WhatsApp*.jpeg
 /WhatsApp*.jpg
+
+.vercel

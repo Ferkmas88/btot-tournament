@@ -1,6 +1,8 @@
-# BTOT — By The Old Time
+# BTOT Cuba
 
-Torneo online de Dota 2 para la comunidad cubana. **2 de mayo · 5v5 · Gratis · Premio: Logitech G502 HERO.**
+Torneo online de Dota 2 para la comunidad cubana. *Jugando como en los viejos tiempos.*
+
+**2 de mayo · 5v5 · Gratis · Premio: Logitech G502 HERO.**
 
 Web construida en Next.js 15 + Tailwind + Supabase + Gemini 3 Pro Image ("Nano Banana 2").
 

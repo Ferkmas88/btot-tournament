@@ -15,19 +15,23 @@ export default function Hero({ tournamentDate }: Props) {
       <div className="relative z-10 max-w-5xl mx-auto text-center">
         <div className="stamp-heading mb-6">Torneo online · 2 de mayo</div>
 
-        <h1 className="font-display text-6xl md:text-9xl font-bold tracking-tight leading-[0.9] mb-4">
-          <span className="block text-white">BY THE</span>
-          <span className="block shine-text">OLD TIME</span>
+        <h1 className="font-display text-7xl md:text-[10rem] font-bold tracking-tight leading-[0.9] mb-4">
+          <span className="block text-white">BTOT</span>
+          <span className="block shine-text">CUBA</span>
         </h1>
 
-        <p className="font-mono text-sm md:text-base text-amber-gold tracking-[0.3em] mb-2">
-          DOTA 2 · 5v5 · CUBA
+        <p className="font-mono text-sm md:text-base text-amber-gold tracking-[0.3em] mb-2 mt-2">
+          TORNEO DE DOTA 2 · 5v5 · ONLINE
         </p>
 
-        <p className="max-w-2xl mx-auto text-white/70 text-lg md:text-xl mb-12 mt-6">
+        <p className="font-display text-2xl md:text-3xl text-white/90 mt-6 mb-6 italic tracking-wide">
+          Jugando como en los viejos tiempos
+        </p>
+
+        <p className="max-w-2xl mx-auto text-white/70 text-base md:text-lg mb-12">
           El torneo que honra los años de <span className="text-blood-light">fichas en los Joven Club</span>,
-          los <span className="text-blood-light">LAN sin conexión</span>, y las noches de Dota 2 en cada provincia.
-          Hoy se juega online. Pero el alma es la misma.
+          los <span className="text-blood-light">LAN de barrio</span>, y las noches de Dota 2 en cada provincia.
+          Hoy se juega online. El alma es la misma.
         </p>
 
         <div className="mb-14">
