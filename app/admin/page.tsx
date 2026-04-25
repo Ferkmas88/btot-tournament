@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { isAuthed } from '@/lib/admin-auth';
 import { getServiceClient } from '@/lib/supabase';
+import TeamLinksCell from '@/components/admin/TeamLinksCell';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,6 +107,7 @@ export default async function AdminDashboard() {
                 <Th>Email capitán</Th>
                 <Th>Provincia</Th>
                 <Th>Código</Th>
+                <Th>Links</Th>
                 <Th>Confirmados</Th>
                 <Th>Estado</Th>
                 <Th>Fecha</Th>
@@ -126,6 +128,14 @@ export default async function AdminDashboard() {
                     <Td>{t.province}</Td>
                     <Td className="font-mono text-amber-gold tracking-widest">
                       {t.join_code ?? '—'}
+                    </Td>
+                    <Td>
+                      <TeamLinksCell
+                        teamName={t.team_name}
+                        joinCode={t.join_code}
+                        captainContact={t.captain_contact}
+                        contactType={t.contact_type}
+                      />
                     </Td>
                     <Td>
                       <span
