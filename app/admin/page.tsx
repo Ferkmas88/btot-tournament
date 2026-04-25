@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { isAuthed } from '@/lib/admin-auth';
 import { getServiceClient } from '@/lib/supabase';
 import TeamLinksCell from '@/components/admin/TeamLinksCell';
+import DeleteTeamButton from '@/components/admin/DeleteTeamButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -161,12 +162,15 @@ export default async function AdminDashboard() {
                       })}
                     </Td>
                     <Td>
-                      <Link
-                        href={`/admin/equipos/${t.id}`}
-                        className="font-mono text-xs text-amber-gold hover:underline"
-                      >
-                        ver →
-                      </Link>
+                      <div className="flex flex-col gap-1.5">
+                        <Link
+                          href={`/admin/equipos/${t.id}`}
+                          className="font-mono text-xs text-amber-gold hover:underline"
+                        >
+                          ver →
+                        </Link>
+                        <DeleteTeamButton teamId={t.id} teamName={t.team_name} />
+                      </div>
                     </Td>
                   </tr>
                 );
