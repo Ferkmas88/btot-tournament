@@ -9,7 +9,7 @@ export default function Prize() {
             LOGITECH <span className="text-blood">G502 HERO</span>
           </h2>
           <p className="font-mono text-sm text-amber-gold tracking-[0.2em]">
-            EL MOUSE QUE GANA TORNEOS · $50 USD
+            5 MOUSES · UNO PARA CADA JUGADOR DEL EQUIPO CAMPEÓN · $250 USD
           </p>
         </div>
 
@@ -36,8 +36,9 @@ export default function Prize() {
             <Spec label="ILUMINACIÓN" value="LIGHTSYNC RGB" detail="16.8M colores" />
             <div className="pt-6 border-t border-white/10">
               <p className="font-mono text-sm text-white/60 leading-relaxed">
-                El mouse favorito de jugadores profesionales desde 2014. Lo ganó el capitán del
-                equipo campeón. <span className="text-amber-gold">Un solo ganador. Un solo mouse.</span>
+                El mouse favorito de jugadores profesionales desde 2014. El equipo campeón se lleva{' '}
+                <span className="text-amber-gold">5 mouses — uno para cada jugador.</span> Nadie se
+                queda mirando.
               </p>
             </div>
           </div>
