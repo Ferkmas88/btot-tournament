@@ -1,4 +1,4 @@
--- BTOT Tournament — schema completo
+-- Papaque Tournament — schema completo
 -- Idempotente: re-ejecutar es seguro.
 -- Run en Supabase SQL Editor.
 

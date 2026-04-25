@@ -4,7 +4,7 @@ import { isAuthed } from '@/lib/admin-auth';
 import LogoutButton from '@/components/admin/LogoutButton';
 
 export const metadata: Metadata = {
-  title: 'Admin · BTOT',
+  title: 'Admin · Papaque',
   robots: { index: false, follow: false },
 };
 
@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Link href="/admin" className="font-display text-lg tracking-widest text-amber-gold">
-                BTOT · ADMIN
+                PAPAQUE · ADMIN
               </Link>
               <nav className="flex items-center gap-4 font-mono text-xs">
                 <Link href="/admin" className="text-white/70 hover:text-white">

@@ -58,7 +58,7 @@ export default async function JoinPage({ params }: PageProps) {
       <div className="max-w-2xl mx-auto">
         <header className="text-center mb-10">
           <p className="font-mono text-xs tracking-[0.3em] text-amber-gold/80 mb-3">
-            BTOT CUBA · INVITACIÓN DE EQUIPO
+            PAPAQUE · INVITACIÓN DE EQUIPO
           </p>
           <h1 className="font-display text-3xl md:text-5xl text-white mb-3">
             Te invitaron a <span className="text-amber-gold">{data.team.team_name}</span>

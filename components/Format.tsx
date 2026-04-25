@@ -27,7 +27,7 @@ export default function Format() {
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               <LobbyStat icon={Shield} label="Regla base" value="Roster fijo" />
-              <LobbyStat icon={Trophy} label="Objetivo" value="Campeon BTOT" />
+              <LobbyStat icon={Trophy} label="Objetivo" value="Campeon Papaque" />
             </div>
           </div>
 

@@ -13,7 +13,7 @@ export default async function AdminLoginPage() {
       <div className="w-full max-w-sm">
         <header className="text-center mb-8">
           <p className="font-mono text-[10px] tracking-[0.3em] text-amber-gold/80 mb-2">
-            BTOT · ADMIN
+            PAPAQUE · ADMIN
           </p>
           <h1 className="font-display text-3xl text-white">Acceso restringido</h1>
         </header>

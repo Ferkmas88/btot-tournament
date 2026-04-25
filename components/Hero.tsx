@@ -23,7 +23,7 @@ export default function Hero({ tournamentDate }: Props) {
       <div className="relative z-10 mx-auto grid min-h-[calc(94vh-4rem)] max-w-7xl grid-cols-1 gap-5 lg:grid-cols-[230px_1fr_330px]">
         <aside className="angled-panel hidden self-stretch p-4 lg:block">
           <div className="mb-8 border-b border-white/10 pb-5">
-            <div className="font-display text-3xl text-white">BTOT</div>
+            <div className="font-display text-3xl text-white">PAPAQUE</div>
             <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-amber-gold">
               Cuba Lobby
             </div>
@@ -65,8 +65,8 @@ export default function Hero({ tournamentDate }: Props) {
           <div className="max-w-4xl">
             <div className="stamp-heading mb-5">Torneo online · 2 de mayo</div>
             <h1 className="font-display text-7xl font-bold leading-[0.86] tracking-tight text-white md:text-[10rem]">
-              <span className="block">BTOT</span>
-              <span className="block shine-text">CUBA</span>
+              <span className="block">PAPA</span>
+              <span className="block shine-text">QUE</span>
             </h1>
 
             <p className="mt-5 font-mono text-sm tracking-[0.28em] text-amber-gold md:text-base">
@@ -79,8 +79,8 @@ export default function Hero({ tournamentDate }: Props) {
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <a href="#registro" className="btn-primary">
-                Registrar mi equipo
+              <a href="/inscribirse" className="btn-primary">
+                Inscribir mi equipo
               </a>
               <a href="#formato" className="btn-secondary">
                 Ver formato

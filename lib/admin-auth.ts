@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { createHmac, timingSafeEqual } from 'crypto';
 
-export const ADMIN_COOKIE = 'btot_admin';
+export const ADMIN_COOKIE = 'papaque_admin';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 días
 
 function getAdminPassword(): string {
@@ -16,7 +16,7 @@ function getAdminPassword(): string {
 // Sin secret separado: usar el password como su propia key HMAC es suficiente
 // para 1 admin / dashboard interno. Si el password rota, la cookie deja de servir.
 export function buildToken(password: string): string {
-  return createHmac('sha256', password).update('btot-admin-v1').digest('hex');
+  return createHmac('sha256', password).update('papaque-admin-v1').digest('hex');
 }
 
 export function expectedToken(): string {

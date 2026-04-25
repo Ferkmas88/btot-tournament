@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-3 gap-8 mb-10">
           <div>
             <div className="font-display text-4xl text-white mb-2 tracking-tight">
-              BTOT <span className="text-blood">CUBA</span>
+              PAPA<span className="text-blood">QUE</span>
             </div>
             <p className="font-mono text-xs text-amber-gold/80 tracking-widest mb-3">
               JUGANDO COMO EN LOS VIEJOS TIEMPOS
@@ -24,7 +24,7 @@ export default function Footer() {
               <li><a href={discord} className="hover:text-amber-gold transition">Discord oficial</a></li>
               <li><a href="#historia" className="hover:text-amber-gold transition">Historia Dota Cuba</a></li>
               <li><a href="#comunidad" className="hover:text-amber-gold transition">Selecciones y canales</a></li>
-              <li><a href="#registro" className="hover:text-amber-gold transition">Inscribir equipo</a></li>
+              <li><a href="/inscribirse" className="hover:text-amber-gold transition">Inscribir equipo</a></li>
             </ul>
           </div>
 
@@ -42,7 +42,7 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="font-mono text-xs text-white/30">
-            © {year} BTOT · Por la comunidad cubana de Dota 2
+            © {year} Papaque · Por la comunidad cubana de Dota 2
           </p>
           <p className="font-mono text-xs text-white/30">
             Producido por <span className="text-amber-gold">Digital AM</span>
