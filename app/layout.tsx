@@ -28,11 +28,9 @@ export const metadata: Metadata = {
     'Torneo online de Dota 2 para la comunidad cubana. 5v5, gratis, 2 de mayo. Premio: Logitech G502 HERO. Jugando como en los viejos tiempos.',
   openGraph: {
     title: 'Papaque — Torneo de Dota 2',
-    description: 'Regístrate gratis. 2 de mayo. Premio: Logitech G502 HERO. Jugando como en los viejos tiempos.',
+    description: 'Regístrate gratis. 2 de mayo. Premio: 5 Logitech G502 HERO. Jugando como en los viejos tiempos.',
     type: 'website',
-  },
-  icons: {
-    icon: '/favicon.ico',
+    images: [{ url: '/papaque-logo.png', width: 600, height: 600, alt: 'Papaque · Torneo de Dota 2' }],
   },
 };
 

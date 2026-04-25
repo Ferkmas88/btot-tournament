@@ -6,9 +6,11 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-3 gap-8 mb-10">
           <div>
-            <div className="font-display text-4xl text-white mb-2 tracking-tight">
-              PAPA<span className="text-blood">QUE</span>
-            </div>
+            <img
+              src="/papaque-logo.png"
+              alt="Papaque · Torneo de Dota 2"
+              className="w-32 h-32 mb-3 rounded-sm"
+            />
             <p className="font-mono text-xs text-amber-gold/80 tracking-widest mb-3">
               JUGANDO COMO EN LOS VIEJOS TIEMPOS
             </p>

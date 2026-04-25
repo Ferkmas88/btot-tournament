@@ -21,8 +21,12 @@ export default function Hero({ tournamentDate }: Props) {
       <div className="relative z-10 mx-auto grid min-h-[calc(94vh-4rem)] max-w-7xl grid-cols-1 gap-5 lg:grid-cols-[230px_1fr_330px]">
         <aside className="angled-panel hidden self-stretch p-4 lg:block">
           <div className="mb-8 border-b border-white/10 pb-5">
-            <div className="font-display text-3xl text-white">PAPAQUE</div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-amber-gold">
+            <img
+              src="/papaque-logo.png"
+              alt="Papaque · Torneo de Dota 2"
+              className="w-full max-w-[180px] mx-auto mb-3"
+            />
+            <div className="text-center font-mono text-[10px] uppercase tracking-[0.24em] text-amber-gold">
               Cuba Lobby
             </div>
           </div>
