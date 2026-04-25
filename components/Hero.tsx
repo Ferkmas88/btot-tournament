@@ -6,7 +6,6 @@ const menu = [
   ['Registro', '#registro'],
   ['Formato', '#formato'],
   ['Premio', '#premio'],
-  ['Comunidad', '#comunidad'],
 ];
 
 export default function Hero({ tournamentDate }: Props) {

@@ -2,7 +2,6 @@ import Hero from '@/components/Hero';
 import LiveStats from '@/components/LiveStats';
 import Prize from '@/components/Prize';
 import Format from '@/components/Format';
-import Community from '@/components/Community';
 import Register from '@/components/Register';
 import Footer from '@/components/Footer';
 
@@ -17,7 +16,6 @@ export default function HomePage() {
       <LiveStats />
       <Prize />
       <Format />
-      <Community />
       <Register />
       <Footer />
     </main>

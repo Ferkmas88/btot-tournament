@@ -22,7 +22,6 @@ export default function Footer() {
             <div className="label-text">Comunidad</div>
             <ul className="space-y-2 text-white/70 text-sm">
               <li><a href={discord} className="hover:text-amber-gold transition">Discord oficial</a></li>
-              <li><a href="#comunidad" className="hover:text-amber-gold transition">Selecciones y canales</a></li>
               <li><a href="/inscribirse" className="hover:text-amber-gold transition">Inscribir equipo</a></li>
             </ul>
           </div>
