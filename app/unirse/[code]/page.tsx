@@ -71,17 +71,19 @@ export default async function JoinPage({ params }: PageProps) {
           <p className="font-mono text-xs tracking-[0.3em] text-amber-gold/80 mb-3">
             PAPAQUE · INVITACIÓN DE EQUIPO
           </p>
-          <h1 className="font-display text-3xl md:text-5xl text-white mb-3">
+          <h1 className="font-display text-2xl md:text-3xl text-white">
             Te invitaron a <span className="text-amber-gold">{data.team.team_name}</span>
           </h1>
-          <p className="text-white/60 text-sm">
-            Capitán: <span className="text-white/90">{data.team.captain_name}</span> ·{' '}
-            <span className="text-white/90">{data.team.province}</span> ·{' '}
-            <span className="text-white/90">{confirmados}/4 confirmados</span>
-          </p>
         </header>
 
         <SubscribeGate>
+          <div className="text-center mb-8">
+            <p className="text-white/60 text-sm">
+              Capitán: <span className="text-white/90">{data.team.captain_name}</span> ·{' '}
+              <span className="text-white/90">{data.team.province}</span> ·{' '}
+              <span className="text-white/90">{confirmados}/4 confirmados</span>
+            </p>
+          </div>
           <JoinForm code={code.toUpperCase()} team={data.team} slots={data.slots} />
         </SubscribeGate>
       </div>
