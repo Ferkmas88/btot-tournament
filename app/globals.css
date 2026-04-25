@@ -87,10 +87,10 @@ body {
   width: 100%;
 }
 
-/* Display font fallback stack */
+/* Display font (Black Ops One) — gaming/military stencil */
 .font-display {
-  letter-spacing: -0.02em;
-  font-stretch: condensed;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 /* Shiny text for premium accents */

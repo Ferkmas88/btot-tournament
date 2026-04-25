@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { Oswald, Inter, JetBrains_Mono } from 'next/font/google';
+import { Black_Ops_One, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
-const display = Oswald({
+const display = Black_Ops_One({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: '400',
   variable: '--font-display',
   display: 'swap',
 });

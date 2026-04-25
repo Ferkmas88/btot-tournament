@@ -72,7 +72,7 @@ export default function Hero({ tournamentDate }: Props) {
                     'radial-gradient(ellipse at 30% 50%, rgba(212,160,23,0.55), transparent 60%)',
                 }}
               />
-              <h1 className="font-display text-[3.6rem] font-bold leading-[0.92] tracking-[-0.01em] text-white sm:text-7xl md:text-[8.5rem] lg:text-[9.5rem]">
+              <h1 className="font-display text-[3.2rem] leading-[1] tracking-[0.04em] text-white sm:text-6xl md:text-[7.5rem] lg:text-[8.5rem]">
                 <span className="shine-text">PAPAQUE</span>
               </h1>
               <div className="mt-3 flex items-center gap-3">
