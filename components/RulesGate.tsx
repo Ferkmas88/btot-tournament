@@ -19,8 +19,8 @@ const RULES = [
   },
   {
     n: 2,
-    title: 'MMR combinado máximo 1500',
-    body: 'La suma del MMR de los 5 jugadores no puede pasar de 1500. Esto mantiene el torneo parejo.',
+    title: 'MMR combinado máximo 15000',
+    body: 'La suma del MMR de los 5 jugadores no puede pasar de 15000. Esto mantiene el torneo parejo.',
   },
   {
     n: 3,
@@ -34,11 +34,6 @@ const RULES = [
   },
   {
     n: 5,
-    title: 'Solo cubanos',
-    body: 'Esta edición es exclusiva para jugadores cubanos. Próximas ediciones podrían abrir a otros países.',
-  },
-  {
-    n: 6,
     title: 'Las fotos las mandás después',
     body: 'Acá solo te inscribís. Las fotos de cuenta, MMR y busto las mandás por WhatsApp/Discord a la organización después de inscribirte.',
   },
@@ -145,7 +140,7 @@ export default function RulesGate({ children }: Props) {
             className="mt-1 h-4 w-4 accent-amber-gold cursor-pointer"
           />
           <span className="text-white/80 text-sm leading-relaxed">
-            <strong className="text-white">Confirmo</strong> que leí las 6 reglas, mi equipo va a
+            <strong className="text-white">Confirmo</strong> que leí las 5 reglas, mi equipo va a
             cumplirlas, y entiendo que <strong>la organización puede rechazar la inscripción</strong>{' '}
             si no se cumple alguna.
           </span>
