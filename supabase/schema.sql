@@ -13,15 +13,16 @@ create table if not exists public.teams (
 
   team_name text not null,
   captain_name text not null,
-  captain_steam text not null,
+  captain_steam text,
+  captain_email text,
   captain_contact text not null,
   contact_type text not null check (contact_type in ('whatsapp', 'telegram')),
   province text not null,
 
-  player_2 text not null,
-  player_3 text not null,
-  player_4 text not null,
-  player_5 text not null,
+  player_2 text,
+  player_3 text,
+  player_4 text,
+  player_5 text,
 
   notes text,
   referral_source text,
@@ -34,8 +35,21 @@ create table if not exists public.teams (
 );
 
 -- join_code: código corto que el capitán comparte con sus jugadores.
+-- Legacy: ya no se usa en el flow nuevo (capitán inscribe a todos), pero mantenido
+-- para compatibilidad con registros viejos que sí lo tienen.
 alter table public.teams add column if not exists join_code text;
 create unique index if not exists teams_join_code_idx on public.teams (join_code);
+
+-- Nuevo flow: capitán deja email propio + nombre y email de cada uno de los 4 jugadores.
+alter table public.teams add column if not exists captain_email text;
+alter table public.teams add column if not exists player_2_name text;
+alter table public.teams add column if not exists player_2_email text;
+alter table public.teams add column if not exists player_3_name text;
+alter table public.teams add column if not exists player_3_email text;
+alter table public.teams add column if not exists player_4_name text;
+alter table public.teams add column if not exists player_4_email text;
+alter table public.teams add column if not exists player_5_name text;
+alter table public.teams add column if not exists player_5_email text;
 
 create index if not exists teams_created_at_idx on public.teams (created_at desc);
 create index if not exists teams_province_idx on public.teams (province);
