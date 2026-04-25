@@ -24,6 +24,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <Link href="/admin" className="text-white/70 hover:text-white">
                   Equipos
                 </Link>
+                <Link href="/admin/bracket" className="text-white/70 hover:text-white">
+                  Bracket
+                </Link>
                 <a href="/api/admin/export" className="text-white/70 hover:text-white">
                   Export CSV
                 </a>

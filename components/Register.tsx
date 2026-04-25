@@ -15,7 +15,7 @@ export default function Register() {
             Mete tu equipo al <span className="text-blood">torneo</span>
           </h2>
           <p className="font-mono text-sm text-amber-gold tracking-[0.2em]">
-            GRATIS · 16 EQUIPOS MAX · CIERRE 1 DE MAYO 23:59
+            GRATIS · 4 EQUIPOS MAX · CIERRE 1 DE MAYO 23:59
           </p>
         </div>
 

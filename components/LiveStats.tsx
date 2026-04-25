@@ -3,7 +3,7 @@ import { getServiceClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
-const MAX_TEAMS = 16;
+const MAX_TEAMS = 4;
 
 type TeamRow = {
   team_name: string;
@@ -158,6 +158,13 @@ export default async function LiveStats() {
               className="btn-primary w-full text-center justify-center"
             >
               Sumar mi equipo →
+            </Link>
+
+            <Link
+              href="/bracket"
+              className="btn-secondary w-full text-center justify-center"
+            >
+              Ver bracket →
             </Link>
           </aside>
         </div>

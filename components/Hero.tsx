@@ -43,7 +43,7 @@ export default function Hero({ tournamentDate }: Props) {
             <div className="metal-tile mt-3 p-4">
               <div className="font-display text-2xl text-amber-gold">Abierto</div>
               <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
-                16 equipos max
+                4 equipos max
               </div>
             </div>
           </div>
@@ -89,7 +89,7 @@ export default function Hero({ tournamentDate }: Props) {
 
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               <Stat label="Modo" value="5v5" />
-              <Stat label="Cupo" value="16" />
+              <Stat label="Cupo" value="4" />
               <Stat label="Costo" value="$0" />
             </div>
           </div>

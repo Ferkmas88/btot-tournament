@@ -89,6 +89,31 @@ create table if not exists public.team_members (
 create index if not exists team_members_team_idx on public.team_members (team_id);
 
 -- =========================================
+-- MATCHES — bracket del torneo (4 equipos, single elim: 2 semis + 1 final)
+-- =========================================
+-- 3 rows fijas con slot: 'semi1', 'semi2', 'final'.
+-- Los IDs de los equipos referencian teams. Cuando se marca winner en semi,
+-- ese winner_id se promueve manualmente al slot correspondiente del final.
+create table if not exists public.matches (
+  id uuid primary key default gen_random_uuid(),
+  slot text not null unique check (slot in ('semi1', 'semi2', 'final')),
+  team_a_id uuid references public.teams(id) on delete set null,
+  team_b_id uuid references public.teams(id) on delete set null,
+  winner_id uuid references public.teams(id) on delete set null,
+  status text not null default 'pending' check (status in ('pending', 'in_progress', 'done')),
+  scheduled_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Inserta las 3 rows del bracket si no existen.
+insert into public.matches (slot) values ('semi1') on conflict (slot) do nothing;
+insert into public.matches (slot) values ('semi2') on conflict (slot) do nothing;
+insert into public.matches (slot) values ('final') on conflict (slot) do nothing;
+
+alter table public.matches enable row level security;
+
+-- =========================================
 -- SUBSCRIBERS — newsletter para próximos eventos
 -- =========================================
 create table if not exists public.subscribers (
