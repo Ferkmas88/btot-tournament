@@ -41,18 +41,25 @@ const IMAGEN_STD = 'imagen-4.0-generate-001';
 const GEMINI_IMAGE = 'gemini-3-pro-image-preview';
 
 const STYLE =
-  'cinematografico, iluminacion calida color ambar y naranja, grano de pelicula 35mm, ' +
-  'sombras dramaticas profundas, paleta: negro profundo, rojo sangre (#c23f32), dorado ambar (#e8b454). ' +
-  'Composicion editorial, alta calidad, sin texto, sin logos, sin marcas de agua.';
+  'fantasia moderna competitiva, cinematografico, menu principal de videojuego MOBA como inspiracion de atmosfera, ' +
+  'NO copiar interfaces ni heroes existentes, personajes originales, sin logos, sin texto, sin marcas de agua. ' +
+  'Paleta: negro profundo, azul abisal, dorado ambar metalico (#e8b454), rojo sangre (#c23f32). ' +
+  'Paneles oscuros angulares, metal bruñido, runas sutiles, niebla volumetrica, particulas de batalla, alta calidad.';
 
 const PROMPTS = [
   {
     name: 'hero-cybercafe',
     aspect: '16:9',
     prompt:
-      `Cyber-cafe cubano en el ano 2012, interior penumbroso, fila de PCs beige con monitores CRT corriendo Dota 2, ` +
-      `jovenes cubanos concentrados jugando, mouse Logitech brillando suavemente, una bandera cubana en la pared, ` +
-      `humedad tropical en el aire, humo de cigarro pasando frente a una lampara de escritorio. ${STYLE}`,
+      `Escena hero horizontal para sitio de torneo: cinco siluetas de heroes MOBA originales avanzando hacia una arena antigua, ` +
+      `portal azul profundo al centro, antorchas doradas, destellos rojos de combate, composicion con espacio oscuro al centro para UI web. ${STYLE}`,
+  },
+  {
+    name: 'hero-lobby',
+    aspect: '16:9',
+    prompt:
+      `Interfaz cinematografica de lobby competitivo inspirado en menu principal de MOBA, paneles laterales metalicos angulares, ` +
+      `mesa tactica con bracket holografico, mapa oscuro de una isla caribena estilizada, acentos dorados y azul profundo, sin texto legible. ${STYLE}`,
   },
   {
     name: 'prize-mouse',
@@ -66,9 +73,8 @@ const PROMPTS = [
     name: 'history-havana',
     aspect: '16:9',
     prompt:
-      `Torneo LAN en un aula de La Habana alrededor del 2012, diez monitores CRT amontonados, espectadores apretujados ` +
-      `detras de los jugadores, hoja de bracket escrita a mano pegada a la pizarra, sol tropical de tarde entrando por ` +
-      `persianas de madera. Caras concentradas, tension competitiva. ${STYLE}`,
+      `Torneo LAN cubano transformado con energia de fantasia moderna: aula oscura con PCs antiguas, jugadores concentrados, ` +
+      `sobre los monitores flotan siluetas de heroes originales como espiritus de batalla, luz azul y dorada, tension competitiva. ${STYLE}`,
   },
   {
     name: 'history-provinces',
@@ -77,6 +83,20 @@ const PROMPTS = [
       `Mapa estilizado de la isla de Cuba al atardecer, cada provincia marcada con un pin rojo brillante, ` +
       `patron sutil de circuito electronico sobre la isla, siluetas tenues de jugadores en teclados flotando sobre los pines ` +
       `en Camaguey, Matanzas, Las Tunas y La Habana. Estetica retrofuturista. ${STYLE}`,
+  },
+  {
+    name: 'team-archetypes',
+    aspect: '16:9',
+    prompt:
+      `Cinco heroes MOBA originales alineados como equipo antes de una final: carry con espada luminosa, mid con magia azul, ` +
+      `offlaner con armadura pesada, support con reliquia dorada, hard support con estandarte rojo. Fondo de arena nocturna, sin texto. ${STYLE}`,
+  },
+  {
+    name: 'bracket-arena',
+    aspect: '16:9',
+    prompt:
+      `Arena de torneo MOBA vista desde arriba, dos bases opuestas con rios de luz azul y roja, bracket holografico abstracto flotando encima, ` +
+      `gradas oscuras, trofeo dorado al fondo, atmosfera de final competitiva, sin texto. ${STYLE}`,
   },
 ];
 

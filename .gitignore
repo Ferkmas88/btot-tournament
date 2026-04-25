@@ -38,9 +38,26 @@ next-env.d.ts
 /public/generated/*.png
 /public/generated/*.jpg
 !/public/generated/.gitkeep
+!/public/generated/hero-cybercafe.png
+!/public/generated/hero-lobby.png
+!/public/generated/prize-mouse.png
+!/public/generated/history-havana.png
+!/public/generated/history-provinces.png
+!/public/generated/team-archetypes.png
+!/public/generated/bracket-arena.png
 
 # loose reference images in project root (not part of site)
 /WhatsApp*.jpeg
 /WhatsApp*.jpg
+
+# playwright / screenshot artifacts
+/.playwright-mcp/
+/site-full*.jpeg
+/site-full*.png
+/page-*.jpeg
+/page-*.png
+
+# claude code local settings
+/.claude/settings.local.json
 
 .vercel

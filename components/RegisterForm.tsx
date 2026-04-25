@@ -8,6 +8,7 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 export default function RegisterForm() {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [joinCode, setJoinCode] = useState<string | null>(null);
   const discord = process.env.NEXT_PUBLIC_DISCORD_INVITE ?? '#';
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -24,6 +25,7 @@ export default function RegisterForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo registrar');
+      setJoinCode(data.join_code ?? null);
       setStatus('success');
     } catch (err) {
       setStatus('error');
@@ -32,27 +34,11 @@ export default function RegisterForm() {
   }
 
   if (status === 'success') {
-    return (
-      <div className="max-w-2xl mx-auto text-center border-2 border-amber-gold p-10 bg-ink-900/80">
-        <div className="stamp-heading mb-6 border-amber-gold text-amber-gold">Registrado</div>
-        <h3 className="font-display text-4xl md:text-5xl text-white mb-4">
-          Tu equipo está <span className="text-amber-gold">dentro</span>
-        </h3>
-        <p className="text-white/70 mb-8">
-          Te confirmaremos por WhatsApp o Telegram 24 horas antes del torneo.
-          <br />
-          Mientras tanto, <strong className="text-white">únete al Discord AHORA</strong>. Los
-          brackets y la mesa de capitanes se publican ahí.
-        </p>
-        <a href={discord} target="_blank" rel="noopener" className="btn-primary">
-          Unirme al Discord →
-        </a>
-      </div>
-    );
+    return <SuccessPanel joinCode={joinCode} discord={discord} />;
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-3xl mx-auto bg-ink-900/60 border border-blood/30 p-6 md:p-10">
+    <form onSubmit={onSubmit} className="angled-panel mx-auto max-w-3xl p-6 md:p-10">
       <div className="grid md:grid-cols-2 gap-5">
         <Field label="Nombre del equipo" name="team_name" placeholder="Los Tigres del Cerro" required />
         <Field label="Capitán (nombre real)" name="captain_name" placeholder="Juan Pérez" required />
@@ -121,6 +107,91 @@ export default function RegisterForm() {
         </p>
       </div>
     </form>
+  );
+}
+
+function SuccessPanel({ joinCode, discord }: { joinCode: string | null; discord: string }) {
+  const [copied, setCopied] = useState<'link' | 'code' | null>(null);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const joinUrl = joinCode ? `${origin}/unirse/${joinCode}` : '';
+  const waMessage = joinCode
+    ? `Hermano, te metí en el equipo del torneo de Dota 2 cubano. Confirmá tu Steam acá: ${joinUrl}`
+    : '';
+  const waHref = `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
+
+  async function copy(value: string, kind: 'link' | 'code') {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(kind);
+      setTimeout(() => setCopied(null), 1800);
+    } catch {
+      /* clipboard bloqueado, ignoro */
+    }
+  }
+
+  return (
+    <div className="angled-panel mx-auto max-w-2xl p-10 text-center">
+      <div className="stamp-heading mb-6 border-amber-gold text-amber-gold">Registrado</div>
+      <h3 className="font-display text-4xl md:text-5xl text-white mb-4">
+        Tu equipo está <span className="text-amber-gold">dentro</span>
+      </h3>
+
+      {joinCode && (
+        <div className="mb-8 border border-amber-gold/40 bg-ink-900/60 p-6 text-left">
+          <p className="label-text mb-3 text-center">Código de tu equipo</p>
+          <div className="flex justify-center mb-5">
+            <button
+              type="button"
+              onClick={() => copy(joinCode, 'code')}
+              className="font-mono text-3xl md:text-4xl tracking-[0.4em] text-amber-gold border-2 border-amber-gold/50 px-6 py-3 hover:bg-amber-gold/10 transition"
+              title="Click para copiar"
+            >
+              {joinCode}
+            </button>
+          </div>
+
+          <p className="text-white/70 text-sm mb-4 text-center">
+            Mandale este link a tus 4 jugadores para que confirmen su Steam:
+          </p>
+
+          <div className="font-mono text-xs bg-black/50 border border-white/10 p-3 break-all text-white/80 mb-4">
+            {joinUrl}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => copy(joinUrl, 'link')}
+              className="btn-secondary text-sm"
+            >
+              {copied === 'link' ? '✓ Copiado' : 'Copiar link'}
+            </button>
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener"
+              className="btn-secondary text-sm"
+            >
+              Compartir por WhatsApp
+            </a>
+          </div>
+
+          <p className="text-white/40 text-xs mt-4 font-mono text-center">
+            Si tus jugadores no confirman, el equipo igual queda registrado con los nicks que pusiste.
+          </p>
+        </div>
+      )}
+
+      <p className="text-white/70 mb-6">
+        Te confirmaremos por WhatsApp o Telegram 24 horas antes del torneo.
+        <br />
+        Mientras tanto, <strong className="text-white">únete al Discord AHORA</strong>. Los
+        brackets y la mesa de capitanes se publican ahí.
+      </p>
+      <a href={discord} target="_blank" rel="noopener" className="btn-primary">
+        Unirme al Discord →
+      </a>
+    </div>
   );
 }
 

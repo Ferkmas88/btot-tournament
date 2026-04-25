@@ -81,6 +81,29 @@ export default function History() {
           </p>
         </div>
 
+        <div className="mb-14 grid gap-4 md:grid-cols-2">
+          <figure className="image-frame group p-2">
+            <img
+              src="/generated/history-havana.png"
+              alt="Torneo LAN cubano con energia de fantasia competitiva"
+              className="h-64 w-full object-cover opacity-90 transition group-hover:opacity-100"
+            />
+            <figcaption className="px-3 pb-3 pt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-gold/75">
+              LAN de barrio · origen
+            </figcaption>
+          </figure>
+          <figure className="image-frame group p-2">
+            <img
+              src="/generated/history-provinces.png"
+              alt="Mapa estilizado de Cuba con provincias conectadas por el torneo"
+              className="h-64 w-full object-cover opacity-90 transition group-hover:opacity-100"
+            />
+            <figcaption className="px-3 pb-3 pt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-gold/75">
+              Provincias conectadas · escena nacional
+            </figcaption>
+          </figure>
+        </div>
+
         <div className="relative">
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 timeline-line -translate-x-1/2" />
           <div className="space-y-12">

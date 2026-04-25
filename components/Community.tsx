@@ -57,6 +57,18 @@ export default function Community() {
           </p>
         </div>
 
+        <div className="image-frame blue-glow mb-16 p-2">
+          <img
+            src="/generated/team-archetypes.png"
+            alt="Equipo de cinco heroes originales listo para competir"
+            className="h-[280px] w-full object-cover md:h-[420px]"
+          />
+          <div className="flex flex-col justify-between gap-2 border-t border-white/10 px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-white/45 md:flex-row">
+            <span>Carry · Mid · Offlane · Support · Hard Support</span>
+            <span className="text-amber-gold/80">Cinco roles, una llamada</span>
+          </div>
+        </div>
+
         {/* Selección Nacional */}
         <div className="grid md:grid-cols-2 gap-6 mb-16">
           <div className="bg-ink-900/60 border border-blood/30 p-6">

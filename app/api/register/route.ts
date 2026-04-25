@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServiceClient, PROVINCES } from '@/lib/supabase';
+import { generateJoinCode } from '@/lib/codes';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,8 @@ const schema = z.object({
   utm_campaign: z.string().trim().max(40).optional().nullable(),
 });
 
+const MAX_CODE_RETRIES = 5;
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -39,17 +42,40 @@ export async function POST(request: Request) {
 
   try {
     const supabase = getServiceClient();
-    const { error } = await supabase.from('teams').insert(parsed.data);
-    if (error) {
-      if (error.code === '23505') {
-        return NextResponse.json(
-          { error: 'Ya existe un equipo con ese nombre' },
-          { status: 409 },
-        );
+
+    for (let attempt = 0; attempt < MAX_CODE_RETRIES; attempt++) {
+      const join_code = generateJoinCode();
+      const { data, error } = await supabase
+        .from('teams')
+        .insert({ ...parsed.data, join_code })
+        .select('id, join_code')
+        .single();
+
+      if (!error && data) {
+        return NextResponse.json({ ok: true, join_code: data.join_code });
       }
+
+      if (error?.code === '23505') {
+        // Conflict on team_name → no reintento, error definitivo.
+        const msg = (error.message ?? '').toLowerCase();
+        if (msg.includes('team_name')) {
+          return NextResponse.json(
+            { error: 'Ya existe un equipo con ese nombre' },
+            { status: 409 },
+          );
+        }
+        // Conflict on join_code → reintento con otro code.
+        continue;
+      }
+
+      // Otro error → fallar.
       return NextResponse.json({ error: 'No pudimos guardar el registro' }, { status: 500 });
     }
-    return NextResponse.json({ ok: true });
+
+    return NextResponse.json(
+      { error: 'No pudimos generar un código único, intenta de nuevo' },
+      { status: 500 },
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'error desconocido';
     return NextResponse.json({ error: message }, { status: 500 });
