@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import RegisterWizard from '@/components/RegisterWizard';
+import ResumeTeamBanner from '@/components/ResumeTeamBanner';
 import RulesGate from '@/components/RulesGate';
 import SubscribeGate from '@/components/SubscribeGate';
 
@@ -20,6 +21,8 @@ export default function InscribirsePage() {
           ← Volver al sitio
         </Link>
       </div>
+
+      <ResumeTeamBanner />
 
       <SubscribeGate>
         <RulesGate>

@@ -66,15 +66,12 @@ function fieldError(name: keyof FormData, value: string): string | null {
 
 export default function RegisterWizard() {
   const router = useRouter();
-  const discord = process.env.NEXT_PUBLIC_DISCORD_INVITE ?? '#';
 
   const [step, setStep] = useState(1);
   const [data, setData] = useState<FormData>(EMPTY);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-  const [joinCode, setJoinCode] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -154,17 +151,21 @@ export default function RegisterWizard() {
       } catch {
         /* ignore */
       }
-      setJoinCode(json.join_code ?? null);
-      setDone(true);
+      const code: string | undefined = json.join_code;
+      if (code) {
+        try {
+          localStorage.setItem('papaque-team-code', code);
+        } catch {
+          /* ignore */
+        }
+        router.push(`/equipo/${code}`);
+        return;
+      }
+      throw new Error('Servidor no devolvió código de equipo');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error desconocido');
-    } finally {
       setSubmitting(false);
     }
-  }
-
-  if (done) {
-    return <SuccessPanel joinCode={joinCode} discord={discord} onHome={() => router.push('/')} />;
   }
 
   const stepProps: StepProps = { data, update, touched, markTouched };
@@ -215,96 +216,6 @@ export default function RegisterWizard() {
         Tus datos se guardan automáticamente. Si cerrás el navegador y volvés, retomás donde
         quedaste.
       </p>
-    </div>
-  );
-}
-
-function SuccessPanel({
-  joinCode,
-  discord,
-  onHome,
-}: {
-  joinCode: string | null;
-  discord: string;
-  onHome: () => void;
-}) {
-  const [copied, setCopied] = useState<'link' | 'code' | null>(null);
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const joinUrl = joinCode ? `${origin}/unirse/${joinCode}` : '';
-  const waMessage = joinCode
-    ? `Asere, te metí en mi equipo del torneo Papaque (Dota 2). Entrá acá, seguí los canales y te unís: ${joinUrl}`
-    : '';
-  const waHref = `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
-
-  async function copy(value: string, kind: 'link' | 'code') {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(kind);
-      setTimeout(() => setCopied(null), 1800);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  return (
-    <div className="angled-panel mx-auto max-w-2xl p-8 md:p-10 text-center">
-      <div className="stamp-heading mb-6 border-amber-gold text-amber-gold">Equipo creado</div>
-      <h2 className="font-display text-3xl md:text-5xl text-white mb-3">
-        Ahora <span className="text-amber-gold">tus 4 jugadores</span> tienen que entrar
-      </h2>
-      <p className="text-white/70 mb-8 max-w-lg mx-auto">
-        Cada jugador tiene que abrir el link, seguir los canales del torneo y dejar su nombre +
-        email. Sin esos 4 confirmados, el equipo no juega.
-      </p>
-
-      {joinCode && (
-        <div className="border border-amber-gold/40 bg-ink-900/60 p-6 text-left mb-8">
-          <p className="label-text mb-3 text-center">Código de tu equipo</p>
-          <div className="flex justify-center mb-5">
-            <button
-              type="button"
-              onClick={() => copy(joinCode, 'code')}
-              className="font-mono text-3xl md:text-4xl tracking-[0.4em] text-amber-gold border-2 border-amber-gold/50 px-6 py-3 hover:bg-amber-gold/10 transition"
-              title="Click para copiar"
-            >
-              {joinCode}
-            </button>
-          </div>
-
-          <p className="text-white/70 text-sm mb-4 text-center">
-            Mandá este link a tus 4 jugadores por WhatsApp:
-          </p>
-
-          <div className="font-mono text-xs bg-black/50 border border-white/10 p-3 break-all text-white/80 mb-4">
-            {joinUrl}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              type="button"
-              onClick={() => copy(joinUrl, 'link')}
-              className="btn-secondary text-sm"
-            >
-              {copied === 'link' ? '✓ Copiado' : 'Copiar link'}
-            </button>
-            <a href={waHref} target="_blank" rel="noopener" className="btn-secondary text-sm">
-              Compartir por WhatsApp
-            </a>
-          </div>
-        </div>
-      )}
-
-      <p className="text-white/60 text-sm mb-5">
-        También uníte vos al Discord — los anuncios del torneo viven ahí.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <a href={discord} target="_blank" rel="noopener" className="btn-primary">
-          Unirme al Discord →
-        </a>
-        <button type="button" onClick={onHome} className="btn-secondary">
-          Volver al sitio
-        </button>
-      </div>
     </div>
   );
 }

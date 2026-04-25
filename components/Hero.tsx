@@ -62,14 +62,27 @@ export default function Hero({ tournamentDate }: Props) {
 
           <div className="max-w-4xl">
             <div className="stamp-heading mb-5">Torneo online · 2 de mayo</div>
-            <h1 className="font-display text-7xl font-bold leading-[0.86] tracking-tight text-white md:text-[10rem]">
-              <span className="block">PAPA</span>
-              <span className="block shine-text">QUE</span>
-            </h1>
 
-            <p className="mt-5 font-mono text-sm tracking-[0.28em] text-amber-gold md:text-base">
-              DOTA 2 · 5V5 · ONLINE · CUBA
-            </p>
+            <div className="relative">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -z-10 blur-3xl opacity-40"
+                style={{
+                  background:
+                    'radial-gradient(ellipse at 30% 50%, rgba(212,160,23,0.55), transparent 60%)',
+                }}
+              />
+              <h1 className="font-display text-[3.6rem] font-bold leading-[0.92] tracking-[-0.01em] text-white sm:text-7xl md:text-[8.5rem] lg:text-[9.5rem]">
+                <span className="shine-text">PAPAQUE</span>
+              </h1>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="h-px w-12 bg-amber-gold/60" />
+                <p className="font-mono text-xs tracking-[0.32em] text-amber-gold md:text-sm">
+                  DOTA 2 · 5V5 · ONLINE · CUBA
+                </p>
+                <div className="h-px flex-1 bg-amber-gold/20" />
+              </div>
+            </div>
 
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/76 md:text-xl">
               Un lobby cubano para equipos que quieren jugar serio, con estetica de arena oscura,
