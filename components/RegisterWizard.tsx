@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PROVINCES, type Province } from '@/lib/supabase';
+import {
+  isValidEmail,
+  isValidName,
+  isValidPhone,
+  isValidTeamName,
+  VALIDATION_MESSAGES,
+} from '@/lib/validators';
 
 const STORAGE_KEY = 'papaque-wizard-v1';
 const TOTAL_STEPS = 5;
@@ -43,7 +50,43 @@ const EMPTY: FormData = {
   referral_source: '',
 };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+type FieldKind = 'name' | 'email' | 'phone' | 'team_name' | 'province' | 'optional';
+
+const FIELD_KIND: Record<keyof FormData, FieldKind> = {
+  team_name: 'team_name',
+  province: 'province',
+  captain_name: 'name',
+  captain_email: 'email',
+  captain_contact: 'phone',
+  contact_type: 'optional',
+  player_2_name: 'name',
+  player_2_email: 'email',
+  player_3_name: 'name',
+  player_3_email: 'email',
+  player_4_name: 'name',
+  player_4_email: 'email',
+  player_5_name: 'name',
+  player_5_email: 'email',
+  referral_source: 'optional',
+};
+
+function fieldError(name: keyof FormData, value: string): string | null {
+  if (!value.trim()) return 'Campo obligatorio';
+  switch (FIELD_KIND[name]) {
+    case 'name':
+      return isValidName(value) ? null : VALIDATION_MESSAGES.name;
+    case 'email':
+      return isValidEmail(value) ? null : VALIDATION_MESSAGES.email;
+    case 'phone':
+      return isValidPhone(value) ? null : VALIDATION_MESSAGES.phone;
+    case 'team_name':
+      return isValidTeamName(value) ? null : VALIDATION_MESSAGES.team_name;
+    case 'province':
+      return value === '' ? 'Selecciona una provincia' : null;
+    default:
+      return null;
+  }
+}
 
 export default function RegisterWizard() {
   const router = useRouter();
@@ -51,12 +94,12 @@ export default function RegisterWizard() {
 
   const [step, setStep] = useState(1);
   const [data, setData] = useState<FormData>(EMPTY);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -75,7 +118,6 @@ export default function RegisterWizard() {
     setHydrated(true);
   }, []);
 
-  // Persist to localStorage
   useEffect(() => {
     if (!hydrated) return;
     try {
@@ -89,30 +131,33 @@ export default function RegisterWizard() {
     setData((prev) => ({ ...prev, [key]: value }));
   }
 
+  function markTouched(key: keyof FormData) {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }
+
+  function fieldsForStep(s: number): (keyof FormData)[] {
+    if (s === 1) return ['team_name', 'province'];
+    if (s === 2) return ['captain_name', 'captain_email', 'captain_contact'];
+    if (s === 3) return ['player_2_name', 'player_2_email', 'player_3_name', 'player_3_email'];
+    if (s === 4) return ['player_4_name', 'player_4_email', 'player_5_name', 'player_5_email'];
+    return [];
+  }
+
   function isStepValid(s: number): boolean {
-    if (s === 1) return data.team_name.trim().length >= 2 && data.province !== '';
-    if (s === 2)
-      return (
-        data.captain_name.trim().length >= 2 &&
-        EMAIL_RE.test(data.captain_email.trim()) &&
-        data.captain_contact.trim().length >= 6
-      );
-    if (s === 3)
-      return (
-        data.player_2_name.trim().length >= 2 &&
-        EMAIL_RE.test(data.player_2_email.trim()) &&
-        data.player_3_name.trim().length >= 2 &&
-        EMAIL_RE.test(data.player_3_email.trim())
-      );
-    if (s === 4)
-      return (
-        data.player_4_name.trim().length >= 2 &&
-        EMAIL_RE.test(data.player_4_email.trim()) &&
-        data.player_5_name.trim().length >= 2 &&
-        EMAIL_RE.test(data.player_5_email.trim())
-      );
-    if (s === 5) return true;
-    return false;
+    return fieldsForStep(s).every((f) => fieldError(f, data[f] as string) === null);
+  }
+
+  function tryAdvance() {
+    const fs = fieldsForStep(step);
+    // mark all current step fields as touched so errors show
+    setTouched((prev) => {
+      const next = { ...prev };
+      fs.forEach((f) => (next[f] = true));
+      return next;
+    });
+    if (isStepValid(step)) {
+      setStep((s) => s + 1);
+    }
   }
 
   async function handleSubmit() {
@@ -158,11 +203,7 @@ export default function RegisterWizard() {
           <a href={discord} target="_blank" rel="noopener" className="btn-primary">
             Unirme al Discord →
           </a>
-          <button
-            type="button"
-            onClick={() => router.push('/')}
-            className="btn-secondary"
-          >
+          <button type="button" onClick={() => router.push('/')} className="btn-secondary">
             Volver al sitio
           </button>
         </div>
@@ -170,16 +211,23 @@ export default function RegisterWizard() {
     );
   }
 
+  const stepProps: StepProps = {
+    data,
+    update,
+    touched,
+    markTouched,
+  };
+
   return (
     <div className="mx-auto max-w-2xl">
       <ProgressBar step={step} total={TOTAL_STEPS} />
 
       <div className="angled-panel p-6 md:p-10 mt-6">
-        {step === 1 && <Step1 data={data} update={update} />}
-        {step === 2 && <Step2 data={data} update={update} />}
-        {step === 3 && <Step3 data={data} update={update} />}
-        {step === 4 && <Step4 data={data} update={update} />}
-        {step === 5 && <Step5 data={data} update={update} />}
+        {step === 1 && <Step1 {...stepProps} />}
+        {step === 2 && <Step2 {...stepProps} />}
+        {step === 3 && <Step3 {...stepProps} />}
+        {step === 4 && <Step4 {...stepProps} />}
+        {step === 5 && <Step5 {...stepProps} />}
 
         {error && (
           <div className="mt-6 p-3 border border-blood bg-blood/10 text-blood-light text-sm font-mono">
@@ -200,9 +248,8 @@ export default function RegisterWizard() {
           {step < TOTAL_STEPS ? (
             <button
               type="button"
-              onClick={() => setStep((s) => s + 1)}
-              disabled={!isStepValid(step)}
-              className="btn-primary disabled:opacity-50"
+              onClick={tryAdvance}
+              className="btn-primary"
             >
               Siguiente →
             </button>
@@ -232,7 +279,9 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <div>
       <div className="flex justify-between font-mono text-[11px] uppercase tracking-[0.2em] text-white/60 mb-2">
-        <span>Paso {step} de {total}</span>
+        <span>
+          Paso {step} de {total}
+        </span>
         <span className="text-amber-gold">{stepLabel(step)}</span>
       </div>
       <div className="h-1 bg-white/10 overflow-hidden">
@@ -252,16 +301,21 @@ function stepLabel(s: number): string {
 type StepProps = {
   data: FormData;
   update: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
+  touched: Record<string, boolean>;
+  markTouched: (key: keyof FormData) => void;
 };
 
-function Step1({ data, update }: StepProps) {
+function Step1({ data, update, touched, markTouched }: StepProps) {
   return (
     <div className="space-y-5">
       <StepTitle>Empezamos por tu equipo</StepTitle>
-      <Field
+      <FieldText
+        name="team_name"
         label="Nombre del equipo"
         value={data.team_name}
         onChange={(v) => update('team_name', v)}
+        touched={!!touched.team_name}
+        markTouched={() => markTouched('team_name')}
         placeholder="Los Tigres del Cerro"
         autoFocus
       />
@@ -270,7 +324,11 @@ function Step1({ data, update }: StepProps) {
         <select
           className="input-field"
           value={data.province}
-          onChange={(e) => update('province', e.target.value as Province)}
+          onChange={(e) => {
+            update('province', e.target.value as Province);
+            markTouched('province');
+          }}
+          onBlur={() => markTouched('province')}
         >
           <option value="" disabled>
             Selecciona...
@@ -281,31 +339,41 @@ function Step1({ data, update }: StepProps) {
             </option>
           ))}
         </select>
+        <ErrorLine
+          show={!!touched.province}
+          message={fieldError('province', data.province as string)}
+        />
       </div>
     </div>
   );
 }
 
-function Step2({ data, update }: StepProps) {
+function Step2({ data, update, touched, markTouched }: StepProps) {
   return (
     <div className="space-y-5">
       <StepTitle>Tus datos como capitán</StepTitle>
-      <Field
-        label="Tu nombre"
+      <FieldText
+        name="captain_name"
+        label="Tu nombre completo"
         value={data.captain_name}
         onChange={(v) => update('captain_name', v)}
+        touched={!!touched.captain_name}
+        markTouched={() => markTouched('captain_name')}
         placeholder="Juan Pérez"
         autoFocus
       />
-      <Field
+      <FieldText
+        name="captain_email"
         label="Tu email"
         type="email"
         value={data.captain_email}
         onChange={(v) => update('captain_email', v)}
+        touched={!!touched.captain_email}
+        markTouched={() => markTouched('captain_email')}
         placeholder="juan@email.com"
       />
       <div>
-        <label className="label-text">Tu contacto</label>
+        <label className="label-text">Tu teléfono (WhatsApp o Telegram)</label>
         <div className="flex gap-2">
           <select
             className="input-field max-w-[150px]"
@@ -317,54 +385,65 @@ function Step2({ data, update }: StepProps) {
           </select>
           <input
             className="input-field"
+            type="tel"
+            inputMode="tel"
             value={data.captain_contact}
             onChange={(e) => update('captain_contact', e.target.value)}
+            onBlur={() => markTouched('captain_contact')}
             placeholder="+53 55555555"
           />
         </div>
+        <ErrorLine
+          show={!!touched.captain_contact}
+          message={fieldError('captain_contact', data.captain_contact)}
+        />
       </div>
     </div>
   );
 }
 
-function Step3({ data, update }: StepProps) {
+function Step3({ data, update, touched, markTouched }: StepProps) {
   return (
     <div className="space-y-5">
       <StepTitle>Jugador 2 y 3 del equipo</StepTitle>
       <p className="text-white/60 text-sm -mt-3">
-        Necesitamos el nombre y email de cada uno para mandarles los detalles del torneo.
+        Necesitamos el nombre completo y email de cada uno.
       </p>
       <PlayerFieldset
         slot={2}
-        name={data.player_2_name}
-        email={data.player_2_email}
+        data={data}
         update={update}
+        touched={touched}
+        markTouched={markTouched}
       />
       <PlayerFieldset
         slot={3}
-        name={data.player_3_name}
-        email={data.player_3_email}
+        data={data}
         update={update}
+        touched={touched}
+        markTouched={markTouched}
       />
     </div>
   );
 }
 
-function Step4({ data, update }: StepProps) {
+function Step4({ data, update, touched, markTouched }: StepProps) {
   return (
     <div className="space-y-5">
       <StepTitle>Jugador 4 y 5 del equipo</StepTitle>
       <PlayerFieldset
         slot={4}
-        name={data.player_4_name}
-        email={data.player_4_email}
+        data={data}
         update={update}
+        touched={touched}
+        markTouched={markTouched}
       />
       <PlayerFieldset
         slot={5}
-        name={data.player_5_name}
-        email={data.player_5_email}
+        data={data}
         update={update}
+        touched={touched}
+        markTouched={markTouched}
       />
 
       <div className="pt-4 border-t border-white/10">
@@ -415,9 +494,14 @@ function Step5({ data }: StepProps) {
         <SummaryBlock label="Jugadores">
           <div className="space-y-2">
             {players.map((p) => (
-              <div key={p.slot} className="flex justify-between gap-3 text-sm border-b border-white/5 pb-2 last:border-0">
+              <div
+                key={p.slot}
+                className="flex justify-between gap-3 text-sm border-b border-white/5 pb-2 last:border-0"
+              >
                 <div>
-                  <div className="text-white/40 font-mono text-[10px] uppercase">Slot {p.slot}</div>
+                  <div className="text-white/40 font-mono text-[10px] uppercase">
+                    Slot {p.slot}
+                  </div>
                   <div className="text-white">{p.name}</div>
                 </div>
                 <div className="font-mono text-xs text-white/60 break-all text-right self-center">
@@ -440,21 +524,29 @@ function StepTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="font-display text-2xl md:text-3xl text-white">{children}</h2>;
 }
 
-function Field({
+function FieldText({
+  name,
   label,
   value,
   onChange,
+  touched,
+  markTouched,
   placeholder,
   type = 'text',
   autoFocus = false,
 }: {
+  name: keyof FormData;
   label: string;
   value: string;
   onChange: (v: string) => void;
+  touched: boolean;
+  markTouched: () => void;
   placeholder?: string;
   type?: string;
   autoFocus?: boolean;
 }) {
+  const err = fieldError(name, value);
+  const hasError = touched && err !== null;
   return (
     <div>
       <label className="label-text">{label}</label>
@@ -462,42 +554,62 @@ function Field({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={markTouched}
         placeholder={placeholder}
-        className="input-field"
+        className={`input-field ${hasError ? 'border-blood/60' : ''}`}
         autoFocus={autoFocus}
+        autoComplete="off"
       />
+      <ErrorLine show={touched} message={err} />
     </div>
+  );
+}
+
+function ErrorLine({ show, message }: { show: boolean; message: string | null }) {
+  if (!show || !message) return null;
+  return (
+    <p className="font-mono text-[11px] text-blood-light mt-1.5 leading-snug">{message}</p>
   );
 }
 
 function PlayerFieldset({
   slot,
-  name,
-  email,
+  data,
   update,
+  touched,
+  markTouched,
 }: {
   slot: 2 | 3 | 4 | 5;
-  name: string;
-  email: string;
+  data: FormData;
   update: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
+  touched: Record<string, boolean>;
+  markTouched: (key: keyof FormData) => void;
 }) {
+  const nameKey = `player_${slot}_name` as keyof FormData;
+  const emailKey = `player_${slot}_email` as keyof FormData;
   return (
     <div className="border border-white/10 p-4 bg-ink-900/40">
       <div className="font-mono text-[11px] tracking-[0.2em] text-amber-gold/80 uppercase mb-3">
         Jugador {slot}
       </div>
       <div className="grid md:grid-cols-2 gap-3">
-        <Field
-          label="Nombre"
-          value={name}
-          onChange={(v) => update(`player_${slot}_name` as keyof FormData, v)}
+        <FieldText
+          name={nameKey}
+          label="Nombre completo"
+          value={data[nameKey] as string}
+          onChange={(v) => update(nameKey, v as never)}
+          touched={!!touched[nameKey]}
+          markTouched={() => markTouched(nameKey)}
           placeholder="Pedro Gómez"
         />
-        <Field
+        <FieldText
+          name={emailKey}
           label="Email"
           type="email"
-          value={email}
-          onChange={(v) => update(`player_${slot}_email` as keyof FormData, v)}
+          value={data[emailKey] as string}
+          onChange={(v) => update(emailKey, v as never)}
+          touched={!!touched[emailKey]}
+          markTouched={() => markTouched(emailKey)}
           placeholder="pedro@email.com"
         />
       </div>

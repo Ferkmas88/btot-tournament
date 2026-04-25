@@ -6,7 +6,6 @@ const menu = [
   ['Registro', '#registro'],
   ['Formato', '#formato'],
   ['Premio', '#premio'],
-  ['Historia', '#historia'],
   ['Comunidad', '#comunidad'],
 ];
 

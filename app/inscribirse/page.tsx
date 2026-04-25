@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import RegisterWizard from '@/components/RegisterWizard';
 import RulesGate from '@/components/RulesGate';
+import SubscribeGate from '@/components/SubscribeGate';
 
 export const metadata: Metadata = {
   title: 'Inscribir equipo · Papaque',
@@ -20,22 +21,24 @@ export default function InscribirsePage() {
         </Link>
       </div>
 
-      <RulesGate>
-        <div className="max-w-2xl mx-auto mb-8">
-          <header className="text-center">
-            <p className="font-mono text-[10px] tracking-[0.3em] text-amber-gold/80 mb-2">
-              PAPAQUE · INSCRIPCIÓN
-            </p>
-            <h1 className="font-display text-4xl md:text-5xl text-white">
-              Inscribí tu <span className="text-amber-gold">equipo</span>
-            </h1>
-            <p className="text-white/60 text-sm mt-3 max-w-md mx-auto">
-              Llename los datos del equipo y de los 5 jugadores. Te tomará 2 minutos.
-            </p>
-          </header>
-        </div>
-        <RegisterWizard />
-      </RulesGate>
+      <SubscribeGate>
+        <RulesGate>
+          <div className="max-w-2xl mx-auto mb-8">
+            <header className="text-center">
+              <p className="font-mono text-[10px] tracking-[0.3em] text-amber-gold/80 mb-2">
+                PAPAQUE · INSCRIPCIÓN
+              </p>
+              <h1 className="font-display text-4xl md:text-5xl text-white">
+                Inscribí tu <span className="text-amber-gold">equipo</span>
+              </h1>
+              <p className="text-white/60 text-sm mt-3 max-w-md mx-auto">
+                Llename los datos del equipo y de los 5 jugadores. Te tomará 2 minutos.
+              </p>
+            </header>
+          </div>
+          <RegisterWizard />
+        </RulesGate>
+      </SubscribeGate>
     </main>
   );
 }
