@@ -17,10 +17,15 @@ export default function Prize() {
           <div className="image-frame relative p-3">
             <div className="absolute -inset-4 bg-blood/20 blur-3xl" />
             <img
-              src="/generated/prize-mouse.png"
-              alt="Logitech G502 HERO"
+              src="/sponsors-photo.jpeg"
+              alt="Logitech G502 HERO — premio del torneo"
               className="relative z-10 w-full max-w-md mx-auto"
             />
+            <p className="relative z-10 mt-4 text-center font-mono text-[11px] tracking-[0.2em] uppercase text-amber-gold/80">
+              Esto es gracias al esfuerzo de{' '}
+              <span className="text-white">Peter Chaun</span> y{' '}
+              <span className="text-white">Fer</span> — originales del Dota cubano.
+            </p>
           </div>
 
           <div className="angled-panel space-y-6 p-6 md:p-8">

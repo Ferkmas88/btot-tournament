@@ -38,13 +38,19 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="font-mono text-xs text-white/30">
-            © {year} Papaque · Por la comunidad cubana de Dota 2
+        <div className="pt-8 border-t border-white/5 space-y-4">
+          <p className="text-center font-mono text-xs text-white/60 tracking-wider">
+            PATROCINADO POR <span className="text-amber-gold">PETER CHAUN</span> Y{' '}
+            <span className="text-amber-gold">FER</span> — originales del Dota cubano.
           </p>
-          <p className="font-mono text-xs text-white/30">
-            Producido por <span className="text-amber-gold">Digital AM</span>
-          </p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="font-mono text-xs text-white/30">
+              © {year} Papaque · Por la comunidad cubana de Dota 2
+            </p>
+            <p className="font-mono text-xs text-white/30">
+              Producido por <span className="text-amber-gold">Digital AM</span>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
