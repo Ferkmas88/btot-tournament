@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'papaque-subscribed-v1';
+const DEFAULT_STORAGE_KEY = 'papaque-subscribed-v1';
 
 const CHANNELS = [
   {
@@ -36,9 +36,10 @@ const CHANNELS = [
 
 type Channel = (typeof CHANNELS)[number]['id'];
 
-type Props = { children: React.ReactNode };
+type Props = { children: React.ReactNode; storageKey?: string };
 
-export default function SubscribeGate({ children }: Props) {
+export default function SubscribeGate({ children, storageKey }: Props) {
+  const STORAGE_KEY = storageKey ?? DEFAULT_STORAGE_KEY;
   const [clicked, setClicked] = useState<Record<Channel, boolean>>({
     twitch: false,
     kick: false,

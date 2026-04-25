@@ -76,7 +76,7 @@ export default async function JoinPage({ params }: PageProps) {
           </h1>
         </header>
 
-        <SubscribeGate>
+        <SubscribeGate storageKey={`papaque-subscribed-join-${code.toUpperCase()}`}>
           <div className="text-center mb-8">
             <p className="text-white/60 text-sm">
               Capitán: <span className="text-white/90">{data.team.captain_name}</span> ·{' '}
