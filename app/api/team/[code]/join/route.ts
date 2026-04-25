@@ -2,16 +2,17 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServiceClient } from '@/lib/supabase';
 import { isValidJoinCode } from '@/lib/codes';
+import {
+  isValidEmail,
+  isValidName,
+  VALIDATION_MESSAGES,
+} from '@/lib/validators';
 
 export const runtime = 'nodejs';
 
 const schema = z.object({
-  slot: z.coerce.number().int().min(2).max(5),
-  nick: z.string().trim().min(1).max(60),
-  steam_id: z.string().trim().min(2).max(80),
-  contact: z.string().trim().min(0).max(40).optional().nullable(),
-  contact_type: z.enum(['whatsapp', 'telegram']).optional().nullable(),
-  self_mmr: z.coerce.number().int().min(0).max(15000).optional().nullable(),
+  nick: z.string().refine(isValidName, VALIDATION_MESSAGES.name),
+  email: z.string().refine(isValidEmail, VALIDATION_MESSAGES.email),
 });
 
 export async function POST(request: Request, ctx: { params: Promise<{ code: string }> }) {
@@ -31,8 +32,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ code: stri
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
+    const issues = parsed.error.flatten().fieldErrors;
+    const firstErr = Object.values(issues).find((v) => v && v.length)?.[0];
     return NextResponse.json(
-      { error: 'Datos inválidos', issues: parsed.error.flatten().fieldErrors },
+      { error: firstErr || 'Datos inválidos', issues },
       { status: 400 },
     );
   }
@@ -42,7 +45,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ code: stri
 
     const { data: team, error: teamErr } = await supabase
       .from('teams')
-      .select('id')
+      .select('id, captain_email')
       .eq('join_code', upper)
       .maybeSingle();
 
@@ -53,25 +56,62 @@ export async function POST(request: Request, ctx: { params: Promise<{ code: stri
       return NextResponse.json({ error: 'Equipo no encontrado' }, { status: 404 });
     }
 
-    const payload = {
-      team_id: team.id,
-      slot: parsed.data.slot,
-      nick: parsed.data.nick,
-      steam_id: parsed.data.steam_id,
-      contact: parsed.data.contact || null,
-      contact_type: parsed.data.contact_type || null,
-      self_mmr: parsed.data.self_mmr ?? null,
-    };
+    const submittedEmail = parsed.data.email.trim().toLowerCase();
+    if (team.captain_email && team.captain_email.trim().toLowerCase() === submittedEmail) {
+      return NextResponse.json(
+        { error: 'Ese email es el del capitán. Cada jugador necesita su propio email.' },
+        { status: 400 },
+      );
+    }
 
-    const { error } = await supabase
+    const { data: members, error: memErr } = await supabase
       .from('team_members')
-      .upsert(payload, { onConflict: 'team_id,slot' });
+      .select('slot, email')
+      .eq('team_id', team.id);
 
-    if (error) {
+    if (memErr) {
+      return NextResponse.json({ error: 'Error consultando miembros' }, { status: 500 });
+    }
+
+    const existing = members ?? [];
+
+    // chequeo de email duplicado dentro del equipo
+    if (existing.some((m) => m.email && m.email.trim().toLowerCase() === submittedEmail)) {
+      return NextResponse.json(
+        { error: 'Ya hay otro jugador en este equipo con ese email.' },
+        { status: 400 },
+      );
+    }
+
+    // asignar primer slot libre entre 2 y 5
+    const usedSlots = new Set(existing.map((m) => m.slot));
+    let assignedSlot: number | null = null;
+    for (const s of [2, 3, 4, 5]) {
+      if (!usedSlots.has(s)) {
+        assignedSlot = s;
+        break;
+      }
+    }
+
+    if (assignedSlot === null) {
+      return NextResponse.json(
+        { error: 'El equipo ya tiene los 4 jugadores confirmados.' },
+        { status: 409 },
+      );
+    }
+
+    const { error: insertErr } = await supabase.from('team_members').insert({
+      team_id: team.id,
+      slot: assignedSlot,
+      nick: parsed.data.nick.trim(),
+      email: parsed.data.email.trim(),
+    });
+
+    if (insertErr) {
       return NextResponse.json({ error: 'No pudimos guardar tu confirmación' }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, slot: assignedSlot });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'error desconocido';
     return NextResponse.json({ error: message }, { status: 500 });

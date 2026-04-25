@@ -11,8 +11,8 @@ import {
   VALIDATION_MESSAGES,
 } from '@/lib/validators';
 
-const STORAGE_KEY = 'papaque-wizard-v1';
-const TOTAL_STEPS = 5;
+const STORAGE_KEY = 'papaque-wizard-v2';
+const TOTAL_STEPS = 3;
 
 type FormData = {
   team_name: string;
@@ -21,14 +21,6 @@ type FormData = {
   captain_email: string;
   captain_contact: string;
   contact_type: 'whatsapp' | 'telegram';
-  player_2_name: string;
-  player_2_email: string;
-  player_3_name: string;
-  player_3_email: string;
-  player_4_name: string;
-  player_4_email: string;
-  player_5_name: string;
-  player_5_email: string;
   referral_source: string;
 };
 
@@ -39,14 +31,6 @@ const EMPTY: FormData = {
   captain_email: '',
   captain_contact: '',
   contact_type: 'whatsapp',
-  player_2_name: '',
-  player_2_email: '',
-  player_3_name: '',
-  player_3_email: '',
-  player_4_name: '',
-  player_4_email: '',
-  player_5_name: '',
-  player_5_email: '',
   referral_source: '',
 };
 
@@ -59,19 +43,11 @@ const FIELD_KIND: Record<keyof FormData, FieldKind> = {
   captain_email: 'email',
   captain_contact: 'phone',
   contact_type: 'optional',
-  player_2_name: 'name',
-  player_2_email: 'email',
-  player_3_name: 'name',
-  player_3_email: 'email',
-  player_4_name: 'name',
-  player_4_email: 'email',
-  player_5_name: 'name',
-  player_5_email: 'email',
   referral_source: 'optional',
 };
 
 function fieldError(name: keyof FormData, value: string): string | null {
-  if (!value.trim()) return 'Campo obligatorio';
+  if (!value.trim() && FIELD_KIND[name] !== 'optional') return 'Campo obligatorio';
   switch (FIELD_KIND[name]) {
     case 'name':
       return isValidName(value) ? null : VALIDATION_MESSAGES.name;
@@ -98,6 +74,7 @@ export default function RegisterWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [joinCode, setJoinCode] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -138,8 +115,6 @@ export default function RegisterWizard() {
   function fieldsForStep(s: number): (keyof FormData)[] {
     if (s === 1) return ['team_name', 'province'];
     if (s === 2) return ['captain_name', 'captain_email', 'captain_contact'];
-    if (s === 3) return ['player_2_name', 'player_2_email', 'player_3_name', 'player_3_email'];
-    if (s === 4) return ['player_4_name', 'player_4_email', 'player_5_name', 'player_5_email'];
     return [];
   }
 
@@ -149,7 +124,6 @@ export default function RegisterWizard() {
 
   function tryAdvance() {
     const fs = fieldsForStep(step);
-    // mark all current step fields as touched so errors show
     setTouched((prev) => {
       const next = { ...prev };
       fs.forEach((f) => (next[f] = true));
@@ -180,6 +154,7 @@ export default function RegisterWizard() {
       } catch {
         /* ignore */
       }
+      setJoinCode(json.join_code ?? null);
       setDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error desconocido');
@@ -189,34 +164,10 @@ export default function RegisterWizard() {
   }
 
   if (done) {
-    return (
-      <div className="angled-panel mx-auto max-w-xl p-10 text-center">
-        <div className="stamp-heading mb-6 border-amber-gold text-amber-gold">Inscrito</div>
-        <h2 className="font-display text-4xl md:text-5xl text-white mb-4">
-          Tu equipo está <span className="text-amber-gold">dentro</span>
-        </h2>
-        <p className="text-white/70 mb-8">
-          Mandamos email a vos y a tus 4 jugadores con los detalles del torneo: horario, bracket
-          y enlaces. Mientras tanto, entrá al Discord — los anuncios viven ahí.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a href={discord} target="_blank" rel="noopener" className="btn-primary">
-            Unirme al Discord →
-          </a>
-          <button type="button" onClick={() => router.push('/')} className="btn-secondary">
-            Volver al sitio
-          </button>
-        </div>
-      </div>
-    );
+    return <SuccessPanel joinCode={joinCode} discord={discord} onHome={() => router.push('/')} />;
   }
 
-  const stepProps: StepProps = {
-    data,
-    update,
-    touched,
-    markTouched,
-  };
+  const stepProps: StepProps = { data, update, touched, markTouched };
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -226,8 +177,6 @@ export default function RegisterWizard() {
         {step === 1 && <Step1 {...stepProps} />}
         {step === 2 && <Step2 {...stepProps} />}
         {step === 3 && <Step3 {...stepProps} />}
-        {step === 4 && <Step4 {...stepProps} />}
-        {step === 5 && <Step5 {...stepProps} />}
 
         {error && (
           <div className="mt-6 p-3 border border-blood bg-blood/10 text-blood-light text-sm font-mono">
@@ -246,11 +195,7 @@ export default function RegisterWizard() {
           </button>
 
           {step < TOTAL_STEPS ? (
-            <button
-              type="button"
-              onClick={tryAdvance}
-              className="btn-primary"
-            >
+            <button type="button" onClick={tryAdvance} className="btn-primary">
               Siguiente →
             </button>
           ) : (
@@ -260,7 +205,7 @@ export default function RegisterWizard() {
               disabled={submitting}
               className="btn-primary disabled:opacity-50"
             >
-              {submitting ? 'Inscribiendo...' : 'Inscribir equipo'}
+              {submitting ? 'Inscribiendo...' : 'Crear equipo'}
             </button>
           )}
         </div>
@@ -270,6 +215,96 @@ export default function RegisterWizard() {
         Tus datos se guardan automáticamente. Si cerrás el navegador y volvés, retomás donde
         quedaste.
       </p>
+    </div>
+  );
+}
+
+function SuccessPanel({
+  joinCode,
+  discord,
+  onHome,
+}: {
+  joinCode: string | null;
+  discord: string;
+  onHome: () => void;
+}) {
+  const [copied, setCopied] = useState<'link' | 'code' | null>(null);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const joinUrl = joinCode ? `${origin}/unirse/${joinCode}` : '';
+  const waMessage = joinCode
+    ? `Asere, te metí en mi equipo del torneo Papaque (Dota 2). Entrá acá, seguí los canales y te unís: ${joinUrl}`
+    : '';
+  const waHref = `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
+
+  async function copy(value: string, kind: 'link' | 'code') {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(kind);
+      setTimeout(() => setCopied(null), 1800);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return (
+    <div className="angled-panel mx-auto max-w-2xl p-8 md:p-10 text-center">
+      <div className="stamp-heading mb-6 border-amber-gold text-amber-gold">Equipo creado</div>
+      <h2 className="font-display text-3xl md:text-5xl text-white mb-3">
+        Ahora <span className="text-amber-gold">tus 4 jugadores</span> tienen que entrar
+      </h2>
+      <p className="text-white/70 mb-8 max-w-lg mx-auto">
+        Cada jugador tiene que abrir el link, seguir los canales del torneo y dejar su nombre +
+        email. Sin esos 4 confirmados, el equipo no juega.
+      </p>
+
+      {joinCode && (
+        <div className="border border-amber-gold/40 bg-ink-900/60 p-6 text-left mb-8">
+          <p className="label-text mb-3 text-center">Código de tu equipo</p>
+          <div className="flex justify-center mb-5">
+            <button
+              type="button"
+              onClick={() => copy(joinCode, 'code')}
+              className="font-mono text-3xl md:text-4xl tracking-[0.4em] text-amber-gold border-2 border-amber-gold/50 px-6 py-3 hover:bg-amber-gold/10 transition"
+              title="Click para copiar"
+            >
+              {joinCode}
+            </button>
+          </div>
+
+          <p className="text-white/70 text-sm mb-4 text-center">
+            Mandá este link a tus 4 jugadores por WhatsApp:
+          </p>
+
+          <div className="font-mono text-xs bg-black/50 border border-white/10 p-3 break-all text-white/80 mb-4">
+            {joinUrl}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => copy(joinUrl, 'link')}
+              className="btn-secondary text-sm"
+            >
+              {copied === 'link' ? '✓ Copiado' : 'Copiar link'}
+            </button>
+            <a href={waHref} target="_blank" rel="noopener" className="btn-secondary text-sm">
+              Compartir por WhatsApp
+            </a>
+          </div>
+        </div>
+      )}
+
+      <p className="text-white/60 text-sm mb-5">
+        También uníte vos al Discord — los anuncios del torneo viven ahí.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href={discord} target="_blank" rel="noopener" className="btn-primary">
+          Unirme al Discord →
+        </a>
+        <button type="button" onClick={onHome} className="btn-secondary">
+          Volver al sitio
+        </button>
+      </div>
     </div>
   );
 }
@@ -295,7 +330,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
 }
 
 function stepLabel(s: number): string {
-  return ['Equipo', 'Capitán', 'Jugadores 2 y 3', 'Jugadores 4 y 5', 'Confirmar'][s - 1] ?? '';
+  return ['Equipo', 'Capitán', 'Confirmar'][s - 1] ?? '';
 }
 
 type StepProps = {
@@ -352,6 +387,9 @@ function Step2({ data, update, touched, markTouched }: StepProps) {
   return (
     <div className="space-y-5">
       <StepTitle>Tus datos como capitán</StepTitle>
+      <p className="text-white/60 text-sm -mt-3">
+        Tus 4 jugadores se anotan aparte con su propio email cuando les pases el código.
+      </p>
       <FieldText
         name="captain_name"
         label="Tu nombre completo"
@@ -402,51 +440,27 @@ function Step2({ data, update, touched, markTouched }: StepProps) {
   );
 }
 
-function Step3({ data, update, touched, markTouched }: StepProps) {
+function Step3({ data, update }: StepProps) {
   return (
     <div className="space-y-5">
-      <StepTitle>Jugador 2 y 3 del equipo</StepTitle>
-      <p className="text-white/60 text-sm -mt-3">
-        Necesitamos el nombre completo y email de cada uno.
-      </p>
-      <PlayerFieldset
-        slot={2}
-        data={data}
-        update={update}
-        touched={touched}
-        markTouched={markTouched}
-      />
-      <PlayerFieldset
-        slot={3}
-        data={data}
-        update={update}
-        touched={touched}
-        markTouched={markTouched}
-      />
-    </div>
-  );
-}
+      <StepTitle>Revisá antes de crear</StepTitle>
+      <div className="space-y-4">
+        <SummaryBlock label="Equipo">
+          <div className="font-display text-2xl text-white">{data.team_name}</div>
+          <div className="font-mono text-xs text-white/60">{data.province}</div>
+        </SummaryBlock>
 
-function Step4({ data, update, touched, markTouched }: StepProps) {
-  return (
-    <div className="space-y-5">
-      <StepTitle>Jugador 4 y 5 del equipo</StepTitle>
-      <PlayerFieldset
-        slot={4}
-        data={data}
-        update={update}
-        touched={touched}
-        markTouched={markTouched}
-      />
-      <PlayerFieldset
-        slot={5}
-        data={data}
-        update={update}
-        touched={touched}
-        markTouched={markTouched}
-      />
+        <SummaryBlock label="Capitán">
+          <div className="text-white">{data.captain_name}</div>
+          <div className="font-mono text-xs text-white/60 break-all">{data.captain_email}</div>
+          <div className="font-mono text-xs text-white/60">
+            <span className="text-amber-gold/80 mr-1">{data.contact_type}</span>
+            {data.captain_contact}
+          </div>
+        </SummaryBlock>
+      </div>
 
-      <div className="pt-4 border-t border-white/10">
+      <div>
         <label className="label-text">¿Dónde nos conociste? (opcional)</label>
         <select
           className="input-field"
@@ -462,59 +476,9 @@ function Step4({ data, update, touched, markTouched }: StepProps) {
           <option value="otro">Otro</option>
         </select>
       </div>
-    </div>
-  );
-}
 
-function Step5({ data }: StepProps) {
-  const players = [
-    { slot: 2, name: data.player_2_name, email: data.player_2_email },
-    { slot: 3, name: data.player_3_name, email: data.player_3_email },
-    { slot: 4, name: data.player_4_name, email: data.player_4_email },
-    { slot: 5, name: data.player_5_name, email: data.player_5_email },
-  ];
-  return (
-    <div className="space-y-5">
-      <StepTitle>Revisá antes de inscribir</StepTitle>
-      <div className="space-y-4">
-        <SummaryBlock label="Equipo">
-          <div className="font-display text-2xl text-white">{data.team_name}</div>
-          <div className="font-mono text-xs text-white/60">{data.province}</div>
-        </SummaryBlock>
-
-        <SummaryBlock label="Capitán">
-          <div className="text-white">{data.captain_name}</div>
-          <div className="font-mono text-xs text-white/60 break-all">{data.captain_email}</div>
-          <div className="font-mono text-xs text-white/60">
-            <span className="text-amber-gold/80 mr-1">{data.contact_type}</span>
-            {data.captain_contact}
-          </div>
-        </SummaryBlock>
-
-        <SummaryBlock label="Jugadores">
-          <div className="space-y-2">
-            {players.map((p) => (
-              <div
-                key={p.slot}
-                className="flex justify-between gap-3 text-sm border-b border-white/5 pb-2 last:border-0"
-              >
-                <div>
-                  <div className="text-white/40 font-mono text-[10px] uppercase">
-                    Slot {p.slot}
-                  </div>
-                  <div className="text-white">{p.name}</div>
-                </div>
-                <div className="font-mono text-xs text-white/60 break-all text-right self-center">
-                  {p.email}
-                </div>
-              </div>
-            ))}
-          </div>
-        </SummaryBlock>
-      </div>
       <p className="font-mono text-[11px] text-white/40 text-center pt-2">
-        Si algo está mal, usá <strong>← Atrás</strong> para corregirlo. Si todo está bien, click en
-        <strong> Inscribir equipo</strong>.
+        Después de crear vas a recibir un código + link para mandar a tus 4 jugadores.
       </p>
     </div>
   );
@@ -567,54 +531,7 @@ function FieldText({
 
 function ErrorLine({ show, message }: { show: boolean; message: string | null }) {
   if (!show || !message) return null;
-  return (
-    <p className="font-mono text-[11px] text-blood-light mt-1.5 leading-snug">{message}</p>
-  );
-}
-
-function PlayerFieldset({
-  slot,
-  data,
-  update,
-  touched,
-  markTouched,
-}: {
-  slot: 2 | 3 | 4 | 5;
-  data: FormData;
-  update: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
-  touched: Record<string, boolean>;
-  markTouched: (key: keyof FormData) => void;
-}) {
-  const nameKey = `player_${slot}_name` as keyof FormData;
-  const emailKey = `player_${slot}_email` as keyof FormData;
-  return (
-    <div className="border border-white/10 p-4 bg-ink-900/40">
-      <div className="font-mono text-[11px] tracking-[0.2em] text-amber-gold/80 uppercase mb-3">
-        Jugador {slot}
-      </div>
-      <div className="grid md:grid-cols-2 gap-3">
-        <FieldText
-          name={nameKey}
-          label="Nombre completo"
-          value={data[nameKey] as string}
-          onChange={(v) => update(nameKey, v as never)}
-          touched={!!touched[nameKey]}
-          markTouched={() => markTouched(nameKey)}
-          placeholder="Pedro Gómez"
-        />
-        <FieldText
-          name={emailKey}
-          label="Email"
-          type="email"
-          value={data[emailKey] as string}
-          onChange={(v) => update(emailKey, v as never)}
-          touched={!!touched[emailKey]}
-          markTouched={() => markTouched(emailKey)}
-          placeholder="pedro@email.com"
-        />
-      </div>
-    </div>
-  );
+  return <p className="font-mono text-[11px] text-blood-light mt-1.5 leading-snug">{message}</p>;
 }
 
 function SummaryBlock({ label, children }: { label: string; children: React.ReactNode }) {

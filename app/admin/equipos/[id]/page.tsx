@@ -8,19 +8,42 @@ export const runtime = 'nodejs';
 
 type Params = { params: Promise<{ id: string }> };
 
+type Member = {
+  slot: number;
+  nick: string;
+  email: string | null;
+  steam_id: string | null;
+  contact: string | null;
+  contact_type: string | null;
+  self_mmr: number | null;
+  confirmed_at: string;
+};
+
 async function loadTeam(id: string) {
   const supabase = getServiceClient();
   const { data: team } = await supabase.from('teams').select('*').eq('id', id).maybeSingle();
   if (!team) return null;
-  return team;
+
+  const { data: members } = await supabase
+    .from('team_members')
+    .select('slot, nick, email, steam_id, contact, contact_type, self_mmr, confirmed_at')
+    .eq('team_id', id)
+    .order('slot');
+
+  return { team, members: (members ?? []) as Member[] };
 }
 
 export default async function TeamDetail({ params }: Params) {
   if (!(await isAuthed())) redirect('/admin/login');
 
   const { id } = await params;
-  const team = await loadTeam(id);
-  if (!team) notFound();
+  const data = await loadTeam(id);
+  if (!data) notFound();
+
+  const { team, members } = data;
+  const memberBySlot = new Map<number, Member>();
+  members.forEach((m) => memberBySlot.set(m.slot, m));
+  const confirmados = members.length;
 
   return (
     <div>
@@ -36,7 +59,12 @@ export default async function TeamDetail({ params }: Params) {
             timeZone: 'America/Havana',
             dateStyle: 'medium',
             timeStyle: 'short',
-          })}
+          })}{' '}
+          · Código <span className="text-amber-gold tracking-widest">{team.join_code ?? '—'}</span>{' '}
+          ·{' '}
+          <span className={confirmados === 4 ? 'text-emerald-400' : 'text-amber-gold'}>
+            {confirmados}/4 jugadores confirmados
+          </span>
         </p>
       </header>
 
@@ -67,16 +95,21 @@ export default async function TeamDetail({ params }: Params) {
             slot={1}
             isCaptain
             name={team.captain_name}
-            email={team.captain_email ?? null}
+            email={team.captain_email}
           />
-          {[2, 3, 4, 5].map((s) => (
-            <PlayerCard
-              key={s}
-              slot={s}
-              name={(team as Record<string, string | null>)[`player_${s}_name`]}
-              email={(team as Record<string, string | null>)[`player_${s}_email`]}
-            />
-          ))}
+          {[2, 3, 4, 5].map((s) => {
+            const m = memberBySlot.get(s);
+            return (
+              <PlayerCard
+                key={s}
+                slot={s}
+                name={m?.nick ?? null}
+                email={m?.email ?? null}
+                pending={!m}
+                confirmedAt={m?.confirmed_at ?? null}
+              />
+            );
+          })}
         </div>
       </section>
     </div>
@@ -103,15 +136,26 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-type PlayerCardProps = {
+function PlayerCard({
+  slot,
+  name,
+  email,
+  isCaptain,
+  pending,
+  confirmedAt,
+}: {
   slot: number;
   name: string | null | undefined;
   email: string | null | undefined;
   isCaptain?: boolean;
-};
-
-function PlayerCard({ slot, name, email, isCaptain }: PlayerCardProps) {
-  const borderColor = isCaptain ? 'border-amber-gold/60' : 'border-white/15';
+  pending?: boolean;
+  confirmedAt?: string | null;
+}) {
+  const borderColor = isCaptain
+    ? 'border-amber-gold/60'
+    : pending
+    ? 'border-white/10'
+    : 'border-emerald-400/40';
 
   return (
     <div className={`border ${borderColor} bg-ink-900/40 p-4`}>
@@ -119,22 +163,43 @@ function PlayerCard({ slot, name, email, isCaptain }: PlayerCardProps) {
         <span className="font-mono text-[10px] tracking-[0.2em] text-white/50 uppercase">
           {isCaptain ? 'Capitán · Slot 1' : `Slot ${slot}`}
         </span>
-        {isCaptain && (
+        {isCaptain ? (
           <span className="text-amber-gold font-mono text-[10px]">★ líder</span>
-        )}
-      </div>
-      <div className="font-display text-xl text-white mb-2 truncate">
-        {name || <span className="text-white/30 italic font-body text-base">sin nombre</span>}
-      </div>
-      <div className="font-mono text-xs text-white/70 break-all">
-        {email ? (
-          <a href={`mailto:${email}`} className="hover:text-amber-gold">
-            {email}
-          </a>
+        ) : pending ? (
+          <span className="text-white/40 font-mono text-[10px]">pendiente</span>
         ) : (
-          <span className="text-white/30">sin email</span>
+          <span className="text-emerald-400 font-mono text-[10px]">✓ confirmado</span>
         )}
       </div>
+      {pending ? (
+        <p className="text-white/40 italic text-sm">
+          Esperando que un jugador entre por el link y confirme.
+        </p>
+      ) : (
+        <>
+          <div className="font-display text-xl text-white mb-2 truncate">
+            {name || 'sin nombre'}
+          </div>
+          <div className="font-mono text-xs text-white/70 break-all">
+            {email ? (
+              <a href={`mailto:${email}`} className="hover:text-amber-gold">
+                {email}
+              </a>
+            ) : (
+              <span className="text-white/30">sin email</span>
+            )}
+          </div>
+          {confirmedAt && (
+            <div className="font-mono text-[10px] text-white/30 mt-2">
+              {new Date(confirmedAt).toLocaleString('es-CU', {
+                timeZone: 'America/Havana',
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

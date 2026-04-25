@@ -77,7 +77,8 @@ create table if not exists public.team_members (
   slot int not null check (slot between 2 and 5),
 
   nick text not null,
-  steam_id text not null,
+  steam_id text,
+  email text,
   contact text,
   contact_type text check (contact_type in ('whatsapp', 'telegram')),
   self_mmr int,
@@ -87,6 +88,11 @@ create table if not exists public.team_members (
 );
 
 create index if not exists team_members_team_idx on public.team_members (team_id);
+
+-- Agregar email a team_members si no existe (para flow nuevo donde jugador deja email)
+alter table public.team_members add column if not exists email text;
+-- steam_id opcional (se removió del flow nuevo)
+alter table public.team_members alter column steam_id drop not null;
 
 -- =========================================
 -- MATCHES — bracket del torneo (4 equipos, single elim: 2 semis + 1 final)

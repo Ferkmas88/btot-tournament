@@ -13,13 +13,12 @@ type TeamRow = {
   captain_contact: string;
   contact_type: string;
   province: string;
+  join_code: string | null;
   status: string;
   created_at: string;
-  player_2_email: string | null;
-  player_3_email: string | null;
-  player_4_email: string | null;
-  player_5_email: string | null;
 };
+
+type MemberCount = { team_id: string };
 
 async function loadDashboard() {
   const supabase = getServiceClient();
@@ -27,13 +26,24 @@ async function loadDashboard() {
   const { data: teams, error: teamsErr } = await supabase
     .from('teams')
     .select(
-      'id, team_name, captain_name, captain_email, captain_contact, contact_type, province, status, created_at, player_2_email, player_3_email, player_4_email, player_5_email',
+      'id, team_name, captain_name, captain_email, captain_contact, contact_type, province, join_code, status, created_at',
     )
     .order('created_at', { ascending: false });
 
   if (teamsErr) throw new Error(teamsErr.message);
 
-  return { teams: (teams ?? []) as TeamRow[] };
+  const { data: members, error: memErr } = await supabase
+    .from('team_members')
+    .select('team_id');
+
+  if (memErr) throw new Error(memErr.message);
+
+  const countByTeam = new Map<string, number>();
+  (members as MemberCount[] | null)?.forEach((m) => {
+    countByTeam.set(m.team_id, (countByTeam.get(m.team_id) ?? 0) + 1);
+  });
+
+  return { teams: (teams ?? []) as TeamRow[], countByTeam };
 }
 
 export default async function AdminDashboard() {
@@ -42,26 +52,21 @@ export default async function AdminDashboard() {
   }
 
   let teams: TeamRow[] = [];
+  let countByTeam = new Map<string, number>();
   let error: string | null = null;
 
   try {
     const data = await loadDashboard();
     teams = data.teams;
+    countByTeam = data.countByTeam;
   } catch (err) {
     error = err instanceof Error ? err.message : 'Error desconocido';
   }
 
   const totalEquipos = teams.length;
-  const totalJugadores = teams.length * 5;
+  const totalConfirmados = Array.from(countByTeam.values()).reduce((a, b) => a + b, 0);
+  const equiposCompletos = teams.filter((t) => (countByTeam.get(t.id) ?? 0) === 4).length;
   const provincias = new Set(teams.map((t) => t.province)).size;
-  const conTodosEmails = teams.filter(
-    (t) =>
-      t.captain_email &&
-      t.player_2_email &&
-      t.player_3_email &&
-      t.player_4_email &&
-      t.player_5_email,
-  ).length;
 
   return (
     <div>
@@ -82,8 +87,8 @@ export default async function AdminDashboard() {
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         <Stat label="Equipos" value={totalEquipos} />
-        <Stat label="Jugadores" value={totalJugadores} />
-        <Stat label="Con todos los emails" value={conTodosEmails} />
+        <Stat label="Completos (4/4)" value={equiposCompletos} />
+        <Stat label="Confirmaciones" value={totalConfirmados} />
         <Stat label="Provincias" value={provincias} />
       </section>
 
@@ -99,46 +104,63 @@ export default async function AdminDashboard() {
                 <Th>Equipo</Th>
                 <Th>Capitán</Th>
                 <Th>Email capitán</Th>
-                <Th>Contacto</Th>
                 <Th>Provincia</Th>
+                <Th>Código</Th>
+                <Th>Confirmados</Th>
                 <Th>Estado</Th>
                 <Th>Fecha</Th>
                 <Th>—</Th>
               </tr>
             </thead>
             <tbody>
-              {teams.map((t) => (
-                <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
-                  <Td>
-                    <span className="font-display text-base text-white">{t.team_name}</span>
-                  </Td>
-                  <Td>{t.captain_name}</Td>
-                  <Td className="font-mono text-xs">{t.captain_email ?? '—'}</Td>
-                  <Td className="font-mono text-xs">
-                    <span className="text-amber-gold/80 mr-1">{t.contact_type}</span>
-                    {t.captain_contact}
-                  </Td>
-                  <Td>{t.province}</Td>
-                  <Td>
-                    <StatusBadge status={t.status} />
-                  </Td>
-                  <Td className="font-mono text-xs text-white/50">
-                    {new Date(t.created_at).toLocaleString('es-CU', {
-                      timeZone: 'America/Havana',
-                      dateStyle: 'short',
-                      timeStyle: 'short',
-                    })}
-                  </Td>
-                  <Td>
-                    <Link
-                      href={`/admin/equipos/${t.id}`}
-                      className="font-mono text-xs text-amber-gold hover:underline"
-                    >
-                      ver →
-                    </Link>
-                  </Td>
-                </tr>
-              ))}
+              {teams.map((t) => {
+                const confirmados = countByTeam.get(t.id) ?? 0;
+                const completo = confirmados === 4;
+                return (
+                  <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
+                    <Td>
+                      <span className="font-display text-base text-white">{t.team_name}</span>
+                    </Td>
+                    <Td>{t.captain_name}</Td>
+                    <Td className="font-mono text-xs">{t.captain_email ?? '—'}</Td>
+                    <Td>{t.province}</Td>
+                    <Td className="font-mono text-amber-gold tracking-widest">
+                      {t.join_code ?? '—'}
+                    </Td>
+                    <Td>
+                      <span
+                        className={
+                          completo
+                            ? 'text-emerald-400 font-mono'
+                            : confirmados > 0
+                            ? 'text-amber-gold font-mono'
+                            : 'text-white/40 font-mono'
+                        }
+                      >
+                        {confirmados}/4
+                      </span>
+                    </Td>
+                    <Td>
+                      <StatusBadge status={t.status} />
+                    </Td>
+                    <Td className="font-mono text-xs text-white/50">
+                      {new Date(t.created_at).toLocaleString('es-CU', {
+                        timeZone: 'America/Havana',
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                      })}
+                    </Td>
+                    <Td>
+                      <Link
+                        href={`/admin/equipos/${t.id}`}
+                        className="font-mono text-xs text-amber-gold hover:underline"
+                      >
+                        ver →
+                      </Link>
+                    </Td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

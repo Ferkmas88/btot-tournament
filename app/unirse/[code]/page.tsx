@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { getServiceClient } from '@/lib/supabase';
 import { isValidJoinCode } from '@/lib/codes';
 import JoinForm, { type SlotInfo, type TeamSummary } from '@/components/JoinForm';
+import SubscribeGate from '@/components/SubscribeGate';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,7 +18,7 @@ async function loadTeam(code: string): Promise<{ team: TeamSummary; slots: SlotI
 
   const { data: team } = await supabase
     .from('teams')
-    .select('id, team_name, captain_name, captain_steam, province, player_2, player_3, player_4, player_5')
+    .select('id, team_name, captain_name, captain_steam, province')
     .eq('join_code', upper)
     .maybeSingle();
 
@@ -32,7 +34,7 @@ async function loadTeam(code: string): Promise<{ team: TeamSummary; slots: SlotI
 
   const slots: SlotInfo[] = [2, 3, 4, 5].map((s) => ({
     slot: s,
-    nick_tentative: (team as Record<string, string>)[`player_${s}`] ?? '',
+    nick_tentative: '',
     confirmed: confirmedBySlot.has(s),
     nick_final: confirmedBySlot.get(s) ?? null,
   }));
@@ -41,7 +43,7 @@ async function loadTeam(code: string): Promise<{ team: TeamSummary; slots: SlotI
     team: {
       team_name: team.team_name,
       captain_name: team.captain_name,
-      captain_steam: team.captain_steam,
+      captain_steam: team.captain_steam ?? '',
       province: team.province,
     },
     slots,
@@ -53,10 +55,19 @@ export default async function JoinPage({ params }: PageProps) {
   const data = await loadTeam(code);
   if (!data) notFound();
 
+  const confirmados = data.slots.filter((s) => s.confirmed).length;
+
   return (
     <main className="min-h-screen px-4 py-12 md:py-20">
       <div className="max-w-2xl mx-auto">
-        <header className="text-center mb-10">
+        <Link
+          href="/"
+          className="font-mono text-xs text-white/50 hover:text-white inline-flex items-center gap-1 mb-6"
+        >
+          ← Volver al sitio
+        </Link>
+
+        <header className="text-center mb-8">
           <p className="font-mono text-xs tracking-[0.3em] text-amber-gold/80 mb-3">
             PAPAQUE · INVITACIÓN DE EQUIPO
           </p>
@@ -65,11 +76,14 @@ export default async function JoinPage({ params }: PageProps) {
           </h1>
           <p className="text-white/60 text-sm">
             Capitán: <span className="text-white/90">{data.team.captain_name}</span> ·{' '}
-            <span className="text-white/90">{data.team.province}</span>
+            <span className="text-white/90">{data.team.province}</span> ·{' '}
+            <span className="text-white/90">{confirmados}/4 confirmados</span>
           </p>
         </header>
 
-        <JoinForm code={code.toUpperCase()} team={data.team} slots={data.slots} />
+        <SubscribeGate>
+          <JoinForm code={code.toUpperCase()} team={data.team} slots={data.slots} />
+        </SubscribeGate>
       </div>
     </main>
   );

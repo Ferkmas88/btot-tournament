@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServiceClient, PROVINCES } from '@/lib/supabase';
+import { generateJoinCode } from '@/lib/codes';
 import {
   isValidEmail,
   isValidName,
@@ -11,52 +12,20 @@ import {
 
 export const runtime = 'nodejs';
 
-const nameField = (msg = VALIDATION_MESSAGES.name) =>
-  z.string().refine(isValidName, msg);
-const emailField = z.string().refine(isValidEmail, VALIDATION_MESSAGES.email);
-const phoneField = z.string().refine(isValidPhone, VALIDATION_MESSAGES.phone);
-const teamNameField = z.string().refine(isValidTeamName, VALIDATION_MESSAGES.team_name);
-
 const schema = z.object({
-  team_name: teamNameField,
-
-  captain_name: nameField(),
-  captain_email: emailField,
-  captain_contact: phoneField,
+  team_name: z.string().refine(isValidTeamName, VALIDATION_MESSAGES.team_name),
+  captain_name: z.string().refine(isValidName, VALIDATION_MESSAGES.name),
+  captain_email: z.string().refine(isValidEmail, VALIDATION_MESSAGES.email),
+  captain_contact: z.string().refine(isValidPhone, VALIDATION_MESSAGES.phone),
   contact_type: z.enum(['whatsapp', 'telegram']),
   province: z.enum(PROVINCES as unknown as [string, ...string[]]),
-
-  player_2_name: nameField(),
-  player_2_email: emailField,
-  player_3_name: nameField(),
-  player_3_email: emailField,
-  player_4_name: nameField(),
-  player_4_email: emailField,
-  player_5_name: nameField(),
-  player_5_email: emailField,
-
   referral_source: z.string().trim().max(40).optional().nullable(),
   utm_source: z.string().trim().max(40).optional().nullable(),
   utm_medium: z.string().trim().max(40).optional().nullable(),
   utm_campaign: z.string().trim().max(40).optional().nullable(),
 });
 
-function emailsAreUnique(data: z.infer<typeof schema>): string | null {
-  const emails = [
-    data.captain_email,
-    data.player_2_email,
-    data.player_3_email,
-    data.player_4_email,
-    data.player_5_email,
-  ].map((e) => e.trim().toLowerCase());
-
-  const seen = new Set<string>();
-  for (const e of emails) {
-    if (seen.has(e)) return `El email ${e} está repetido en el equipo`;
-    seen.add(e);
-  }
-  return null;
-}
+const MAX_CODE_RETRIES = 5;
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -76,26 +45,40 @@ export async function POST(request: Request) {
     );
   }
 
-  const dupErr = emailsAreUnique(parsed.data);
-  if (dupErr) {
-    return NextResponse.json({ error: dupErr }, { status: 400 });
-  }
-
   try {
     const supabase = getServiceClient();
-    const { error } = await supabase.from('teams').insert(parsed.data);
 
-    if (error) {
-      if (error.code === '23505') {
-        return NextResponse.json(
-          { error: 'Ya existe un equipo con ese nombre' },
-          { status: 409 },
-        );
+    for (let attempt = 0; attempt < MAX_CODE_RETRIES; attempt++) {
+      const join_code = generateJoinCode();
+      const { data, error } = await supabase
+        .from('teams')
+        .insert({ ...parsed.data, join_code })
+        .select('id, join_code')
+        .single();
+
+      if (!error && data) {
+        return NextResponse.json({ ok: true, join_code: data.join_code });
       }
+
+      if (error?.code === '23505') {
+        const msg = (error.message ?? '').toLowerCase();
+        if (msg.includes('team_name')) {
+          return NextResponse.json(
+            { error: 'Ya existe un equipo con ese nombre' },
+            { status: 409 },
+          );
+        }
+        // join_code colisión → reintento
+        continue;
+      }
+
       return NextResponse.json({ error: 'No pudimos guardar el registro' }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(
+      { error: 'No pudimos generar un código único, intentá de nuevo' },
+      { status: 500 },
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'error desconocido';
     return NextResponse.json({ error: message }, { status: 500 });
