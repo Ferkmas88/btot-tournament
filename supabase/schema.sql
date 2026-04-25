@@ -51,6 +51,14 @@ alter table public.teams add column if not exists player_4_email text;
 alter table public.teams add column if not exists player_5_name text;
 alter table public.teams add column if not exists player_5_email text;
 
+-- Quitar NOT NULL de columnas legacy (captain_steam y player_N nicks Steam)
+-- para que el flow nuevo (sin Steam) pueda insertar sin esos campos.
+alter table public.teams alter column captain_steam drop not null;
+alter table public.teams alter column player_2 drop not null;
+alter table public.teams alter column player_3 drop not null;
+alter table public.teams alter column player_4 drop not null;
+alter table public.teams alter column player_5 drop not null;
+
 create index if not exists teams_created_at_idx on public.teams (created_at desc);
 create index if not exists teams_province_idx on public.teams (province);
 create index if not exists teams_status_idx on public.teams (status);
