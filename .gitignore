@@ -58,6 +58,8 @@ next-env.d.ts
 /page-*.png
 /admin-*.jpeg
 /admin-*.png
+/prod-*.jpeg
+/prod-*.png
 
 # claude code local settings
 /.claude/settings.local.json
