@@ -26,7 +26,7 @@ const schema = z.object({
 });
 
 const MAX_CODE_RETRIES = 5;
-const MAX_TEAMS = Number.parseInt(process.env.MAX_TEAMS ?? '4', 10);
+const MAX_TEAMS = Number.parseInt(process.env.MAX_TEAMS ?? '6', 10);
 
 export async function POST(request: Request) {
   let body: unknown;
