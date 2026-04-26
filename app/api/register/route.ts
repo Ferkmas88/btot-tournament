@@ -26,6 +26,7 @@ const schema = z.object({
 });
 
 const MAX_CODE_RETRIES = 5;
+const MAX_TEAMS = Number.parseInt(process.env.MAX_TEAMS ?? '4', 10);
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -47,6 +48,23 @@ export async function POST(request: Request) {
 
   try {
     const supabase = getServiceClient();
+
+    const { count, error: countErr } = await supabase
+      .from('teams')
+      .select('id', { count: 'exact', head: true });
+
+    if (countErr) {
+      return NextResponse.json({ error: 'No pudimos verificar cupos' }, { status: 500 });
+    }
+
+    if ((count ?? 0) >= MAX_TEAMS) {
+      return NextResponse.json(
+        {
+          error: `Cupos completos (${MAX_TEAMS} equipos máx). Si tu registro fue cancelado por error, escribinos al Discord.`,
+        },
+        { status: 409 },
+      );
+    }
 
     for (let attempt = 0; attempt < MAX_CODE_RETRIES; attempt++) {
       const join_code = generateJoinCode();
