@@ -40,7 +40,7 @@ export default async function BracketPage() {
             Camino al <span className="text-amber-gold">campeón</span>
           </h1>
           <p className="font-mono text-xs text-white/50 tracking-[0.18em]">
-            4 EQUIPOS · ELIMINACIÓN DIRECTA · 3 PARTIDAS
+            6 EQUIPOS · ELIMINACIÓN DIRECTA · 5 PARTIDAS · 2 BYES A SEMIS
           </p>
         </header>
 
@@ -52,21 +52,32 @@ export default async function BracketPage() {
 
         {matches && (
           <>
-            <div className="grid lg:grid-cols-[1fr_auto_1fr] gap-6 lg:gap-10 items-stretch">
-              {/* Columna izquierda: semis */}
+            <div className="grid lg:grid-cols-[1fr_auto_1fr_auto_1fr] gap-6 lg:gap-8 items-stretch">
+              {/* Cuartos */}
+              <div className="space-y-8">
+                <MatchCard label="Cuartos 1" match={matches.cuartos1} />
+                <MatchCard label="Cuartos 2" match={matches.cuartos2} />
+              </div>
+
+              <div className="hidden lg:flex items-center justify-center">
+                <div className="font-mono text-[10px] tracking-[0.3em] text-amber-gold/50 transform -rotate-90 whitespace-nowrap">
+                  → A SEMIS →
+                </div>
+              </div>
+
+              {/* Semis */}
               <div className="space-y-8">
                 <MatchCard label="Semifinal 1" match={matches.semi1} />
                 <MatchCard label="Semifinal 2" match={matches.semi2} />
               </div>
 
-              {/* Conector visual */}
               <div className="hidden lg:flex items-center justify-center">
                 <div className="font-mono text-[10px] tracking-[0.3em] text-amber-gold/50 transform -rotate-90 whitespace-nowrap">
                   → A LA FINAL →
                 </div>
               </div>
 
-              {/* Columna derecha: final */}
+              {/* Final */}
               <div className="flex items-center">
                 <MatchCard label="Final" match={matches.final} highlight />
               </div>

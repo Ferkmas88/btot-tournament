@@ -5,7 +5,7 @@ import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
-const SLOT = z.enum(['semi1', 'semi2', 'final']);
+const SLOT = z.enum(['cuartos1', 'cuartos2', 'semi1', 'semi2', 'final']);
 
 const setMatchTeamsSchema = z.object({
   action: z.literal('set_teams'),
@@ -86,14 +86,27 @@ export async function POST(request: Request) {
       const { error } = await supabase.from('matches').update(update).eq('slot', slot);
       if (error) throw new Error(error.message);
 
-      // Auto-promote winner to final slot
-      if (winner_id && (slot === 'semi1' || slot === 'semi2')) {
-        const finalSlot = slot === 'semi1' ? 'team_a_id' : 'team_b_id';
-        const { error: e2 } = await supabase
-          .from('matches')
-          .update({ [finalSlot]: winner_id, updated_at: new Date().toISOString() })
-          .eq('slot', 'final');
-        if (e2) throw new Error(e2.message);
+      // Auto-promote winners por la cadena cuartos -> semi -> final.
+      if (winner_id) {
+        // cuartos1 winner -> semi1.team_b ; cuartos2 winner -> semi2.team_b
+        if (slot === 'cuartos1' || slot === 'cuartos2') {
+          const targetSemi = slot === 'cuartos1' ? 'semi1' : 'semi2';
+          const { error: ec } = await supabase
+            .from('matches')
+            .update({ team_b_id: winner_id, updated_at: new Date().toISOString() })
+            .eq('slot', targetSemi);
+          if (ec) throw new Error(ec.message);
+        }
+
+        // semi1 winner -> final.team_a ; semi2 winner -> final.team_b
+        if (slot === 'semi1' || slot === 'semi2') {
+          const finalSlot = slot === 'semi1' ? 'team_a_id' : 'team_b_id';
+          const { error: e2 } = await supabase
+            .from('matches')
+            .update({ [finalSlot]: winner_id, updated_at: new Date().toISOString() })
+            .eq('slot', 'final');
+          if (e2) throw new Error(e2.message);
+        }
       }
 
       return NextResponse.json({ ok: true });
@@ -119,7 +132,7 @@ export async function POST(request: Request) {
           status: 'pending',
           updated_at: new Date().toISOString(),
         })
-        .in('slot', ['semi1', 'semi2', 'final']);
+        .in('slot', ['cuartos1', 'cuartos2', 'semi1', 'semi2', 'final']);
       if (error) throw new Error(error.message);
       return NextResponse.json({ ok: true });
     }

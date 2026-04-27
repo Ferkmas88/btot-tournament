@@ -1,6 +1,8 @@
 import { getServiceClient } from '@/lib/supabase';
 
-export type Slot = 'semi1' | 'semi2' | 'final';
+export type Slot = 'cuartos1' | 'cuartos2' | 'semi1' | 'semi2' | 'final';
+
+export const ALL_SLOTS: Slot[] = ['cuartos1', 'cuartos2', 'semi1', 'semi2', 'final'];
 
 export type MatchRow = {
   id: string;
@@ -55,8 +57,8 @@ export async function loadBracket(): Promise<{
     };
   }
 
-  // Defensive: ensure 3 rows exist
-  for (const slot of ['semi1', 'semi2', 'final'] as Slot[]) {
+  // Defensive: ensure 5 rows exist
+  for (const slot of ALL_SLOTS) {
     if (!matches[slot]) {
       matches[slot] = {
         id: '',

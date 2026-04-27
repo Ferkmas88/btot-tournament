@@ -104,6 +104,42 @@ export default function BracketAdmin({ matches: initial, teams }: Props) {
         </button>
       </div>
 
+      <h2 className="font-display text-3xl text-amber-gold border-b border-amber-gold/30 pb-2 mt-4">
+        Cuartos
+      </h2>
+      <p className="font-mono text-xs text-white/50 -mt-3">
+        4 equipos juegan los 2 cuartos. Los 2 mejores seeds saltan directo a semis (asignalos como
+        Equipo A en Semifinal 1 y 2).
+      </p>
+
+      <SemiCard
+        slot="cuartos1"
+        label="Cuartos 1"
+        match={matches.cuartos1}
+        teams={teams}
+        onSetTeams={setTeams}
+        onSetWinner={setWinner}
+        onSetStatus={setStatus}
+      />
+
+      <SemiCard
+        slot="cuartos2"
+        label="Cuartos 2"
+        match={matches.cuartos2}
+        teams={teams}
+        onSetTeams={setTeams}
+        onSetWinner={setWinner}
+        onSetStatus={setStatus}
+      />
+
+      <h2 className="font-display text-3xl text-amber-gold border-b border-amber-gold/30 pb-2 mt-6">
+        Semifinales
+      </h2>
+      <p className="font-mono text-xs text-white/50 -mt-3">
+        Equipo A = bye seed (lo asignás vos). Equipo B = se rellena solo cuando declarás ganador en
+        cuartos.
+      </p>
+
       <SemiCard
         slot="semi1"
         label="Semifinal 1"
@@ -142,7 +178,7 @@ function SemiCard({
   onSetWinner,
   onSetStatus,
 }: {
-  slot: 'semi1' | 'semi2';
+  slot: 'cuartos1' | 'cuartos2' | 'semi1' | 'semi2';
   label: string;
   match: MatchView;
   teams: TeamLite[];
@@ -214,7 +250,7 @@ function SemiCard({
         </div>
         {match.winner && (
           <p className="font-mono text-[11px] text-emerald-400 mt-3">
-            ✓ {match.winner.team_name} pasa a la final
+            ✓ {match.winner.team_name} pasa a {slot.startsWith('cuartos') ? 'semis' : 'la final'}
           </p>
         )}
       </div>

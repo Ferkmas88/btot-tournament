@@ -95,14 +95,14 @@ alter table public.team_members add column if not exists email text;
 alter table public.team_members alter column steam_id drop not null;
 
 -- =========================================
--- MATCHES — bracket del torneo (4 equipos, single elim: 2 semis + 1 final)
+-- MATCHES — bracket del torneo (6 equipos, single elim con 2 byes)
 -- =========================================
--- 3 rows fijas con slot: 'semi1', 'semi2', 'final'.
--- Los IDs de los equipos referencian teams. Cuando se marca winner en semi,
--- ese winner_id se promueve manualmente al slot correspondiente del final.
+-- 5 rows fijas: 'cuartos1', 'cuartos2', 'semi1', 'semi2', 'final'.
+-- Los 2 mejores seeds saltan cuartos (van directo a semi*.team_a).
+-- Cuartos winners auto-promueven a semi*.team_b. Semi winners → final.
 create table if not exists public.matches (
   id uuid primary key default gen_random_uuid(),
-  slot text not null unique check (slot in ('semi1', 'semi2', 'final')),
+  slot text not null unique check (slot in ('cuartos1', 'cuartos2', 'semi1', 'semi2', 'final')),
   team_a_id uuid references public.teams(id) on delete set null,
   team_b_id uuid references public.teams(id) on delete set null,
   winner_id uuid references public.teams(id) on delete set null,
@@ -112,7 +112,14 @@ create table if not exists public.matches (
   updated_at timestamptz not null default now()
 );
 
--- Inserta las 3 rows del bracket si no existen.
+-- Migracion: si el constraint viejo existe (solo semi1/semi2/final), reemplazarlo.
+alter table public.matches drop constraint if exists matches_slot_check;
+alter table public.matches add constraint matches_slot_check
+  check (slot in ('cuartos1', 'cuartos2', 'semi1', 'semi2', 'final'));
+
+-- Inserta las 5 rows del bracket si no existen.
+insert into public.matches (slot) values ('cuartos1') on conflict (slot) do nothing;
+insert into public.matches (slot) values ('cuartos2') on conflict (slot) do nothing;
 insert into public.matches (slot) values ('semi1') on conflict (slot) do nothing;
 insert into public.matches (slot) values ('semi2') on conflict (slot) do nothing;
 insert into public.matches (slot) values ('final') on conflict (slot) do nothing;
