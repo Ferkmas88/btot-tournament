@@ -24,6 +24,7 @@ export default function TeamDashboard({ joinCode, team, initialSlots }: Props) {
   const [copied, setCopied] = useState(false);
   const [slots, setSlots] = useState<RosterSlot[]>(initialSlots);
   const [lastSync, setLastSync] = useState<number | null>(null);
+  const [isCaptain, setIsCaptain] = useState(false);
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const joinUrl = `${origin}/unirse/${joinCode}`;
@@ -32,7 +33,8 @@ export default function TeamDashboard({ joinCode, team, initialSlots }: Props) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, joinCode);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      setIsCaptain(saved === joinCode);
     } catch {
       /* ignore */
     }
@@ -84,29 +86,31 @@ export default function TeamDashboard({ joinCode, team, initialSlots }: Props) {
         {team.province} · Capitán: {team.captain_name}
       </p>
 
-      {!allIn && (
+      {isCaptain && !allIn && (
         <p className="text-white/70 mb-8 max-w-lg mx-auto">
           Mandales este link a tus 4 jugadores. Cada uno abre, sigue los canales del torneo y deja
           su nombre + email. Sin esos 4 confirmados, el equipo no juega.
         </p>
       )}
 
-      <div className="border border-amber-gold/40 bg-ink-900/60 p-6 text-left mb-8">
-        <p className="label-text mb-3 text-center">Link para tus 4 jugadores</p>
+      {isCaptain && (
+        <div className="border border-amber-gold/40 bg-ink-900/60 p-6 text-left mb-8">
+          <p className="label-text mb-3 text-center">Link para tus 4 jugadores</p>
 
-        <div className="font-mono text-xs bg-black/50 border border-white/10 p-3 break-all text-white/80 mb-4">
-          {joinUrl}
-        </div>
+          <div className="font-mono text-xs bg-black/50 border border-white/10 p-3 break-all text-white/80 mb-4">
+            {joinUrl}
+          </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button type="button" onClick={copyLink} className="btn-secondary text-sm">
-            {copied ? '✓ Copiado' : 'Copiar link'}
-          </button>
-          <a href={waHref} target="_blank" rel="noopener" className="btn-secondary text-sm">
-            Compartir por WhatsApp
-          </a>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button type="button" onClick={copyLink} className="btn-secondary text-sm">
+              {copied ? '✓ Copiado' : 'Copiar link'}
+            </button>
+            <a href={waHref} target="_blank" rel="noopener" className="btn-secondary text-sm">
+              Compartir por WhatsApp
+            </a>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="border border-white/15 bg-ink-900/60 p-6 text-left mb-8">
         <div className="flex items-center justify-between mb-4">

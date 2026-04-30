@@ -105,7 +105,18 @@ function TeamCard({ team }: { team: TeamView }) {
     </>
   );
 
-  return <div className="metal-tile p-4 flex flex-col gap-2">{inner}</div>;
+  if (!team.join_code) {
+    return <div className="metal-tile p-4 flex flex-col gap-2">{inner}</div>;
+  }
+
+  return (
+    <Link
+      href={`/equipo/${team.join_code}`}
+      className="metal-tile p-4 flex flex-col gap-2 transition hover:border-amber-gold/60 hover:bg-amber-gold/5 cursor-pointer"
+    >
+      {inner}
+    </Link>
+  );
 }
 
 function tiempoRelativo(iso: string): string {
