@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-const STORAGE_KEY = 'papaque-team-code';
-
 type RosterSlot = { slot: number; confirmed: boolean; nick_final: string | null };
 
 type TeamInfo = {
@@ -21,24 +19,8 @@ type Props = {
 
 export default function TeamDashboard({ joinCode, team, initialSlots }: Props) {
   const discord = process.env.NEXT_PUBLIC_DISCORD_INVITE ?? '#';
-  const [copied, setCopied] = useState(false);
   const [slots, setSlots] = useState<RosterSlot[]>(initialSlots);
   const [lastSync, setLastSync] = useState<number | null>(null);
-  const [isCaptain, setIsCaptain] = useState(false);
-
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const joinUrl = `${origin}/unirse/${joinCode}`;
-  const waMessage = `Asere, te metí en mi equipo "${team.team_name}" del torneo Papaque (Dota 2). Entrá acá, seguí los canales y te unís: ${joinUrl}`;
-  const waHref = `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      setIsCaptain(saved === joinCode);
-    } catch {
-      /* ignore */
-    }
-  }, [joinCode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,16 +45,6 @@ export default function TeamDashboard({ joinCode, team, initialSlots }: Props) {
     };
   }, [joinCode]);
 
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(joinUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* ignore */
-    }
-  }
-
   const confirmedCount = slots.filter((s) => s.confirmed).length;
   const allIn = confirmedCount === 4;
 
@@ -86,30 +58,11 @@ export default function TeamDashboard({ joinCode, team, initialSlots }: Props) {
         {team.province} · Capitán: {team.captain_name}
       </p>
 
-      {isCaptain && !allIn && (
+      {!allIn && (
         <p className="text-white/70 mb-8 max-w-lg mx-auto">
-          Mandales este link a tus 4 jugadores. Cada uno abre, sigue los canales del torneo y deja
-          su nombre + email. Sin esos 4 confirmados, el equipo no juega.
+          Esperando que los 4 jugadores entren con su nombre + email. Sin esos 4 confirmados, el
+          equipo no juega.
         </p>
-      )}
-
-      {isCaptain && (
-        <div className="border border-amber-gold/40 bg-ink-900/60 p-6 text-left mb-8">
-          <p className="label-text mb-3 text-center">Link para tus 4 jugadores</p>
-
-          <div className="font-mono text-xs bg-black/50 border border-white/10 p-3 break-all text-white/80 mb-4">
-            {joinUrl}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button type="button" onClick={copyLink} className="btn-secondary text-sm">
-              {copied ? '✓ Copiado' : 'Copiar link'}
-            </button>
-            <a href={waHref} target="_blank" rel="noopener" className="btn-secondary text-sm">
-              Compartir por WhatsApp
-            </a>
-          </div>
-        </div>
       )}
 
       <div className="border border-white/15 bg-ink-900/60 p-6 text-left mb-8">
