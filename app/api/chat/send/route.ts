@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getUser } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { checkRate } from '@/lib/rateLimit';
+import { isSameOrigin } from '@/lib/csrf';
 
 export const runtime = 'nodejs';
 
@@ -13,6 +14,9 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ error: 'Origin inválido' }, { status: 403 });
+  }
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 

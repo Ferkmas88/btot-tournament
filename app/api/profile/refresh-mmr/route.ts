@@ -3,12 +3,16 @@ import { steamId64To32 } from '@/lib/steam';
 import { fetchOpenDotaSummary } from '@/lib/opendota';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getCurrentProfile, getUser } from '@/lib/auth';
+import { isSameOrigin } from '@/lib/csrf';
 
 export const runtime = 'nodejs';
 
 const MIN_INTERVAL_MS = 60 * 60 * 1000; // 1 hora entre refresh
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ error: 'Origin inválido' }, { status: 403 });
+  }
   const user = await getUser();
   if (!user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });

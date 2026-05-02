@@ -4,6 +4,7 @@ import { fetchOpenDotaSummary } from '@/lib/opendota';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getUser } from '@/lib/auth';
+import { checkRate } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,15 @@ function randomPassword(): string {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+
+  // Rate limit por IP: 20 callbacks / 5 min. Frena replay de tokens viejos
+  // y abuso del endpoint createUser.
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!checkRate(`steam-cb:${ip}`, 20, 5 * 60_000)) {
+    return NextResponse.redirect(
+      new URL('/auth/login?steam_error=rate_limit', url.origin),
+    );
+  }
 
   const steamId64 = await verifyOpenIDResponse(url.searchParams);
   if (!steamId64) {
@@ -147,17 +157,16 @@ export async function GET(request: Request) {
     );
   }
 
-  // Generar magic link y redirigir. Magic link redirige a /auth/callback?code=...
-  // que ya maneja exchangeCodeForSession y deja al user logueado.
+  // Hardening: NO usar action_link via browser (token en URL = riesgo intercept).
+  // En su lugar: generar magic link, agarrar el hashed_token server-side, y
+  // hacer verifyOtp con el cookie store de la request. La sesion se setea sin
+  // que el token toque el URL del browser.
   const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
     type: 'magiclink',
     email: userEmail,
-    options: {
-      redirectTo: `${url.origin}/auth/callback?next=/perfil`,
-    },
   });
 
-  if (linkErr || !linkData?.properties?.action_link) {
+  if (linkErr || !linkData?.properties?.hashed_token) {
     return NextResponse.redirect(
       new URL(
         `/auth/login?steam_error=${encodeURIComponent(linkErr?.message ?? 'link_failed')}`,
@@ -166,5 +175,18 @@ export async function GET(request: Request) {
     );
   }
 
-  return NextResponse.redirect(linkData.properties.action_link);
+  const supabase = await createSupabaseServerClient();
+  const { error: otpErr } = await supabase.auth.verifyOtp({
+    token_hash: linkData.properties.hashed_token,
+    type: 'magiclink',
+  });
+
+  if (otpErr) {
+    return NextResponse.redirect(
+      new URL(`/auth/login?steam_error=${encodeURIComponent(otpErr.message)}`, url.origin),
+    );
+  }
+
+  // Sesion ya seteada en cookies via @supabase/ssr. Redirect simple al perfil.
+  return NextResponse.redirect(new URL('/perfil', url.origin));
 }

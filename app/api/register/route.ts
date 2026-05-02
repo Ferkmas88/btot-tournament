@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getServiceClient, PROVINCES } from '@/lib/supabase';
 import { generateJoinCode } from '@/lib/codes';
 import { getUser } from '@/lib/auth';
+import { isSameOrigin } from '@/lib/csrf';
 import {
   isValidEmail,
   isValidName,
@@ -30,6 +31,9 @@ const MAX_CODE_RETRIES = 5;
 const MAX_TEAMS = Number.parseInt(process.env.MAX_TEAMS ?? '6', 10);
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ error: 'Origin inválido' }, { status: 403 });
+  }
   const user = await getUser();
   if (!user) {
     return NextResponse.json(
