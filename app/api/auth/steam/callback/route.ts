@@ -58,72 +58,89 @@ export async function GET(request: Request) {
   }
 
   // CASO 2 / 3: usuario anónimo entrando por Steam.
-  // Buscar perfil con ese steam_id_64.
-  const { data: existingProfile } = await admin
+  const email = syntheticEmail(steamId64);
+  const displayName = profile?.personaname ?? `player_${steamId32}`;
+
+  // 1. Buscar profile por steam_id_64 (caso normal repetido).
+  let userId: string | null = null;
+  let userEmail: string = email;
+
+  const byId = await admin
     .from('profiles')
     .select('id, email')
     .eq('steam_id_64', steamId64)
     .maybeSingle();
 
-  let userEmail: string;
-
-  if (existingProfile) {
-    // CASO 2: ya existe cuenta linkeada a este Steam → loguear.
-    userEmail = existingProfile.email;
-    // Refrescar persona/avatar/mmr si cambió.
-    await admin
-      .from('profiles')
-      .update({
-        steam_persona: profile?.personaname ?? existingProfile.email,
-        steam_avatar_url: profile?.avatarfull ?? null,
-        mmr_estimate: mmr,
-        mmr_cached_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existingProfile.id);
+  if (byId.data) {
+    userId = byId.data.id;
+    userEmail = byId.data.email;
   } else {
-    // CASO 3: cuenta nueva. Crear user con email sintético y password random.
-    const email = syntheticEmail(steamId64);
-    const displayName = profile?.personaname ?? `player_${steamId32}`;
+    // 2. Buscar por email sintético (recovery de estado roto donde createUser
+    //    funcionó pero el upsert con steam_id_64 nunca llegó).
+    const byEmail = await admin
+      .from('profiles')
+      .select('id, email')
+      .eq('email', email)
+      .maybeSingle();
 
-    const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email,
-      password: randomPassword(),
-      email_confirm: true,
-      user_metadata: { display_name: displayName },
-    });
-
-    if (createErr || !created.user) {
-      // Si email ya existe (race), reintentar lookup.
-      const { data: retryProfile } = await admin
-        .from('profiles')
-        .select('id, email')
-        .eq('email', email)
-        .maybeSingle();
-      if (!retryProfile) {
-        return NextResponse.redirect(
-          new URL(
-            `/auth/login?steam_error=${encodeURIComponent(createErr?.message ?? 'create_failed')}`,
-            url.origin,
-          ),
-        );
-      }
-      userEmail = retryProfile.email;
+    if (byEmail.data) {
+      userId = byEmail.data.id;
+      userEmail = byEmail.data.email;
     } else {
-      userEmail = email;
-      // Trigger creó profiles. Update con datos Steam.
-      await admin
-        .from('profiles')
-        .update({
-          steam_id_64: steamId64,
-          steam_persona: profile?.personaname ?? null,
-          steam_avatar_url: profile?.avatarfull ?? null,
-          mmr_estimate: mmr,
-          mmr_cached_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', created.user.id);
+      // 3. Crear user nuevo.
+      const created = await admin.auth.admin.createUser({
+        email,
+        password: randomPassword(),
+        email_confirm: true,
+        user_metadata: { display_name: displayName },
+      });
+
+      if (created.error) {
+        // El email puede existir en auth.users sin profile (race).
+        // Buscar por email en auth.users via listUsers (max 1000, ok para esta escala).
+        const list = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        const existing = list.data.users.find((u) => u.email === email);
+        if (!existing) {
+          return NextResponse.redirect(
+            new URL(
+              `/auth/login?steam_error=${encodeURIComponent(created.error.message)}`,
+              url.origin,
+            ),
+          );
+        }
+        userId = existing.id;
+      } else if (created.data.user) {
+        userId = created.data.user.id;
+      }
     }
+  }
+
+  if (!userId) {
+    return NextResponse.redirect(
+      new URL('/auth/login?steam_error=user_resolve_failed', url.origin),
+    );
+  }
+
+  // Upsert profile con datos Steam (cubre casos donde trigger no corrió o steam fields faltaban).
+  const { error: upsertErr } = await admin.from('profiles').upsert(
+    {
+      id: userId,
+      email: userEmail,
+      display_name: displayName,
+      steam_id_64: steamId64,
+      steam_persona: profile?.personaname ?? null,
+      steam_avatar_url: profile?.avatarfull ?? null,
+      mmr_estimate: mmr,
+      mmr_cached_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'id' },
+  );
+
+  if (upsertErr) {
+    return NextResponse.redirect(
+      new URL(`/auth/login?steam_error=${encodeURIComponent(upsertErr.message)}`, url.origin),
+    );
   }
 
   // Generar magic link y redirigir. Magic link redirige a /auth/callback?code=...
