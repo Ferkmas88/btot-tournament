@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import ChatRoom, { type Channel } from '@/components/ChatRoom';
 import { getCurrentProfile, getUser } from '@/lib/auth';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 export const metadata: Metadata = { title: 'Chat · Papaque' };
 export const dynamic = 'force-dynamic';
@@ -15,13 +15,14 @@ export default async function ChatPage({ searchParams }: Props) {
   if (!user) redirect('/auth/login?next=/chat');
 
   const profile = await getCurrentProfile();
-  const supabase = await createSupabaseServerClient();
+  // Admin client porque teams/team_members tienen RLS sin policies de lectura.
+  const admin = getSupabaseAdmin();
 
-  // Lookup team del user (member o captain).
   type TeamLite = { id: string; team_name: string };
   let team: TeamLite | null = null;
 
-  const { data: memberRow } = await supabase
+  // Lookup como member.
+  const { data: memberRow } = await admin
     .from('team_members')
     .select('team_id, teams ( id, team_name )')
     .eq('user_id', user.id)
@@ -33,8 +34,9 @@ export default async function ChatPage({ searchParams }: Props) {
   if (memberRow?.teams) {
     team = Array.isArray(memberRow.teams) ? memberRow.teams[0] ?? null : memberRow.teams;
   }
+  // Lookup como captain.
   if (!team) {
-    const { data: captainTeam } = await supabase
+    const { data: captainTeam } = await admin
       .from('teams')
       .select('id, team_name')
       .eq('captain_user_id', user.id)
