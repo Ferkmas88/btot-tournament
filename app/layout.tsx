@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Black_Ops_One, Inter, JetBrains_Mono } from 'next/font/google';
+import Navbar from '@/components/Navbar';
 import './globals.css';
 
 const display = Black_Ops_One({
@@ -43,6 +44,7 @@ export default function RootLayout({
     <html lang="es" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className="grain scanlines vignette">
         <div className="cuba-accent" />
+        <Navbar />
         {children}
       </body>
     </html>
