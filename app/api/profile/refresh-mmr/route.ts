@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { steamId64To32 } from '@/lib/steam';
-import { fetchOpenDotaMmr } from '@/lib/opendota';
+import { fetchOpenDotaSummary } from '@/lib/opendota';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getCurrentProfile, getUser } from '@/lib/auth';
 
@@ -33,17 +33,20 @@ export async function POST(request: Request) {
   }
 
   const steamId32 = steamId64To32(profile.steam_id_64);
-  const mmr = await fetchOpenDotaMmr(steamId32);
+  const od = await fetchOpenDotaSummary(steamId32);
 
   const supabase = await createSupabaseServerClient();
   await supabase
     .from('profiles')
     .update({
-      mmr_estimate: mmr,
+      mmr_estimate: od.mmrEstimate,
+      // Solo sobreescribir persona/avatar si OpenDota devolvio algo y profile no tiene.
+      ...(od.personaname && !profile.steam_persona ? { steam_persona: od.personaname } : {}),
+      ...(od.avatarUrl && !profile.steam_avatar_url ? { steam_avatar_url: od.avatarUrl } : {}),
       mmr_cached_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', user.id);
 
-  return NextResponse.json({ ok: true, mmr_estimate: mmr });
+  return NextResponse.json({ ok: true, mmr_estimate: od.mmrEstimate, rank_label: od.rankLabel });
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchSteamProfile, steamId64To32, verifyOpenIDResponse } from '@/lib/steam';
-import { fetchOpenDotaMmr } from '@/lib/opendota';
+import { fetchOpenDotaSummary } from '@/lib/opendota';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getUser } from '@/lib/auth';
@@ -26,7 +26,11 @@ export async function GET(request: Request) {
   // Fetch Steam profile (persona + avatar) si hay STEAM_API_KEY.
   const profile = await fetchSteamProfile(steamId64);
   const steamId32 = steamId64To32(steamId64);
-  const mmr = await fetchOpenDotaMmr(steamId32);
+  const openDota = await fetchOpenDotaSummary(steamId32);
+  const mmr = openDota.mmrEstimate;
+  // Fallback: si Steam Web API no devolvio nada (sin key o privado), usar OpenDota.
+  const persona = profile?.personaname ?? openDota.personaname;
+  const avatar = profile?.avatarfull ?? openDota.avatarUrl;
 
   const admin = getSupabaseAdmin();
   const currentUser = await getUser();
@@ -38,8 +42,8 @@ export async function GET(request: Request) {
       .from('profiles')
       .update({
         steam_id_64: steamId64,
-        steam_persona: profile?.personaname ?? null,
-        steam_avatar_url: profile?.avatarfull ?? null,
+        steam_persona: persona,
+        steam_avatar_url: avatar,
         mmr_estimate: mmr,
         mmr_cached_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -59,7 +63,7 @@ export async function GET(request: Request) {
 
   // CASO 2 / 3: usuario anónimo entrando por Steam.
   const email = syntheticEmail(steamId64);
-  const displayName = profile?.personaname ?? `player_${steamId32}`;
+  const displayName = persona ?? `player_${steamId32}`;
 
   // 1. Buscar profile por steam_id_64 (caso normal repetido).
   let userId: string | null = null;
@@ -128,8 +132,8 @@ export async function GET(request: Request) {
       email: userEmail,
       display_name: displayName,
       steam_id_64: steamId64,
-      steam_persona: profile?.personaname ?? null,
-      steam_avatar_url: profile?.avatarfull ?? null,
+      steam_persona: persona,
+      steam_avatar_url: avatar,
       mmr_estimate: mmr,
       mmr_cached_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
