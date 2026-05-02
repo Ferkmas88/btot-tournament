@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServiceClient, PROVINCES } from '@/lib/supabase';
 import { generateJoinCode } from '@/lib/codes';
+import { getUser } from '@/lib/auth';
 import {
   isValidEmail,
   isValidName,
@@ -29,6 +30,14 @@ const MAX_CODE_RETRIES = 5;
 const MAX_TEAMS = Number.parseInt(process.env.MAX_TEAMS ?? '6', 10);
 
 export async function POST(request: Request) {
+  const user = await getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Tenés que estar logueado para crear un equipo. Entrá con Steam o email.' },
+      { status: 401 },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -66,11 +75,24 @@ export async function POST(request: Request) {
       );
     }
 
+    // Block: si user ya tiene equipo como capitán, no permitir crear otro.
+    const { count: existingCount } = await supabase
+      .from('teams')
+      .select('id', { count: 'exact', head: true })
+      .eq('captain_user_id', user.id);
+
+    if ((existingCount ?? 0) > 0) {
+      return NextResponse.json(
+        { error: 'Ya creaste un equipo. No podés crear más de uno.' },
+        { status: 409 },
+      );
+    }
+
     for (let attempt = 0; attempt < MAX_CODE_RETRIES; attempt++) {
       const join_code = generateJoinCode();
       const { data, error } = await supabase
         .from('teams')
-        .insert({ ...parsed.data, join_code })
+        .insert({ ...parsed.data, join_code, captain_user_id: user.id })
         .select('id, join_code')
         .single();
 
