@@ -35,9 +35,22 @@ export default async function SignupPage({ searchParams }: Props) {
             Crear <span className="text-amber-gold">cuenta</span>
           </h1>
           <p className="text-white/60 text-sm max-w-md mx-auto">
-            Una cuenta por jugador. Después podés linkear tu Steam para que tu MMR aparezca solo.
+            La forma rápida es entrar con Steam. Si preferís, abajo hay opción email.
           </p>
         </header>
+
+        <a
+          href="/api/auth/steam/redirect"
+          className="block w-full text-center bg-[#171a21] hover:bg-[#2a3f5f] border border-[#66c0f4]/40 hover:border-[#66c0f4] text-white font-display tracking-wider text-lg py-4 transition mb-6"
+        >
+          🎮 Conectar con Steam →
+        </a>
+
+        <div className="flex items-center gap-3 my-6 text-white/30 font-mono text-[10px] uppercase tracking-wider">
+          <div className="flex-1 h-px bg-white/10" />
+          <span>o con email</span>
+          <div className="flex-1 h-px bg-white/10" />
+        </div>
 
         <AuthForm mode="signup" next={next} />
       </div>
