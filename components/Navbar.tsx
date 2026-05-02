@@ -32,6 +32,12 @@ export default async function Navbar() {
         {user ? (
           <div className="flex items-center gap-3">
             <Link
+              href="/chat"
+              className="font-mono text-xs uppercase tracking-wider text-white/70 hover:text-amber-gold hidden md:inline"
+            >
+              💬 Chat
+            </Link>
+            <Link
               href="/perfil"
               className="flex items-center gap-2 hover:bg-white/5 px-2 py-1 transition"
               title="Mi perfil"
