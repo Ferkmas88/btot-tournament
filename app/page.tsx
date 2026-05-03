@@ -1,4 +1,5 @@
 import Hero from '@/components/Hero';
+import UpcomingMatch from '@/components/UpcomingMatch';
 import LiveStats from '@/components/LiveStats';
 import Prize from '@/components/Prize';
 import Format from '@/components/Format';
@@ -13,6 +14,7 @@ export default function HomePage() {
   return (
     <main>
       <Hero tournamentDate={tournamentDate} />
+      <UpcomingMatch />
       <LiveStats />
       <Prize />
       <Format />
