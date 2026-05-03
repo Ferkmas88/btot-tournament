@@ -239,10 +239,10 @@ export default async function LiveStats() {
             </Link>
 
             <Link
-              href="/bracket"
+              href="/round-robin"
               className="btn-secondary w-full text-center justify-center"
             >
-              Ver bracket →
+              Ver standings →
             </Link>
           </aside>
         </div>
