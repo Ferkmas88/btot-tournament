@@ -185,13 +185,32 @@ function MatchRow({
   disabled: boolean;
 }) {
   const done = match.status === 'done';
+  const live = match.status === 'in_progress';
+  const showScore = done || live;
+  const borderCls = done
+    ? 'border-emerald-400/30 bg-emerald-400/5'
+    : live
+      ? 'border-blood/40 bg-blood/5'
+      : 'border-white/10 bg-ink-900/40';
   return (
-    <div className={`border p-3 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3 items-center ${done ? 'border-emerald-400/30 bg-emerald-400/5' : 'border-white/10 bg-ink-900/40'}`}>
+    <div className={`border p-3 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3 items-center ${borderCls}`}>
       <div className={`text-right ${done && match.winner_id === match.team_a_id ? 'text-amber-gold font-bold' : 'text-white/85'}`}>
         <span className="font-display text-base">{teamA?.team_name ?? '???'}</span>
       </div>
-      <div className="font-mono text-sm text-amber-gold text-center min-w-[60px]">
-        {done ? `${match.score_a} - ${match.score_b}` : 'vs'}
+      <div className="font-mono text-sm text-amber-gold text-center min-w-[60px] flex flex-col items-center gap-1">
+        {showScore ? (
+          <>
+            <span>{match.score_a} - {match.score_b}</span>
+            {live && (
+              <span className="font-mono text-[8px] uppercase tracking-wider text-blood-light flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-blood-light animate-pulse" />
+                EN VIVO
+              </span>
+            )}
+          </>
+        ) : (
+          'vs'
+        )}
       </div>
       <div className={`${done && match.winner_id === match.team_b_id ? 'text-amber-gold font-bold' : 'text-white/85'}`}>
         <span className="font-display text-base">{teamB?.team_name ?? '???'}</span>
@@ -208,6 +227,11 @@ function MatchRow({
           </button>
         ) : (
           <>
+            {/* EN VIVO (intermedio, sin ganador) */}
+            <ScoreBtn label="1-0" onClick={() => onScore(match.id, 1, 0)} disabled={disabled} live />
+            <ScoreBtn label="0-1" onClick={() => onScore(match.id, 0, 1)} disabled={disabled} live />
+            <ScoreBtn label="1-1" onClick={() => onScore(match.id, 1, 1)} disabled={disabled} live />
+            {/* FINAL (declara ganador) */}
             <ScoreBtn label="2-0 A" onClick={() => onScore(match.id, 2, 0)} disabled={disabled} />
             <ScoreBtn label="2-1 A" onClick={() => onScore(match.id, 2, 1)} disabled={disabled} />
             <ScoreBtn label="1-2 B" onClick={() => onScore(match.id, 1, 2)} disabled={disabled} />
@@ -219,14 +243,22 @@ function MatchRow({
   );
 }
 
-function ScoreBtn({ label, onClick, disabled }: { label: string; onClick: () => void; disabled: boolean }) {
+function ScoreBtn({
+  label,
+  onClick,
+  disabled,
+  live = false,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+  live?: boolean;
+}) {
+  const cls = live
+    ? 'font-mono text-[10px] uppercase tracking-wider border border-emerald-400/40 text-emerald-400 px-2 py-1 hover:bg-emerald-400/10 disabled:opacity-40'
+    : 'font-mono text-[10px] uppercase tracking-wider border border-amber-gold/40 text-amber-gold px-2 py-1 hover:bg-amber-gold/10 disabled:opacity-40';
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="font-mono text-[10px] uppercase tracking-wider border border-amber-gold/40 text-amber-gold px-2 py-1 hover:bg-amber-gold/10 disabled:opacity-40"
-    >
+    <button type="button" onClick={onClick} disabled={disabled} className={cls}>
       {label}
     </button>
   );

@@ -137,16 +137,35 @@ export default async function RoundRobinPublicPage() {
                     const a = teamById.get(m.team_a_id);
                     const b = teamById.get(m.team_b_id);
                     const done = m.status === 'done';
+                    const live = m.status === 'in_progress';
+                    const showScore = done || live;
+                    const borderCls = done
+                      ? 'border-emerald-400/30 bg-emerald-400/5'
+                      : live
+                        ? 'border-blood/50 bg-blood/10'
+                        : 'border-white/10 bg-ink-900/40';
                     return (
                       <div
                         key={m.id}
-                        className={`border p-3 grid grid-cols-[1fr_auto_1fr] gap-3 items-center ${done ? 'border-emerald-400/30 bg-emerald-400/5' : 'border-white/10 bg-ink-900/40'}`}
+                        className={`border p-3 grid grid-cols-[1fr_auto_1fr] gap-3 items-center ${borderCls}`}
                       >
                         <div className={`text-right ${done && m.winner_id === m.team_a_id ? 'text-amber-gold font-bold' : 'text-white/85'}`}>
                           <span className="font-display text-base">{a?.team_name ?? '???'}</span>
                         </div>
-                        <div className="font-mono text-sm text-amber-gold text-center min-w-[60px]">
-                          {done ? `${m.score_a} - ${m.score_b}` : 'vs'}
+                        <div className="font-mono text-amber-gold text-center min-w-[80px] flex flex-col items-center gap-1">
+                          {showScore ? (
+                            <>
+                              <span className="text-base">{m.score_a} - {m.score_b}</span>
+                              {live && (
+                                <span className="font-mono text-[9px] uppercase tracking-wider text-blood-light flex items-center gap-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-blood-light animate-pulse" />
+                                  EN VIVO
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-sm">vs</span>
+                          )}
                         </div>
                         <div className={`${done && m.winner_id === m.team_b_id ? 'text-amber-gold font-bold' : 'text-white/85'}`}>
                           <span className="font-display text-base">{b?.team_name ?? '???'}</span>

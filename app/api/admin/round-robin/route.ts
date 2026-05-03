@@ -72,14 +72,7 @@ export async function POST(request: Request) {
 
     if (parsed.data.action === 'set_score') {
       const { match_id, score_a, score_b } = parsed.data;
-      // BO3: el primero a 2 gana. Validación.
-      const valid = (score_a === 2 && score_b < 2) || (score_b === 2 && score_a < 2);
-      if (!valid) {
-        return NextResponse.json(
-          { error: 'En BO3 el ganador debe llegar a 2 (válidos: 2-0, 2-1, 1-2, 0-2)' },
-          { status: 400 },
-        );
-      }
+      // BO3: ganador llega a 2. Si nadie llego a 2 -> in_progress (live score).
       const { data: row, error: getErr } = await supabase
         .from('round_robin_matches')
         .select('team_a_id, team_b_id')
@@ -88,7 +81,15 @@ export async function POST(request: Request) {
       if (getErr) throw new Error(getErr.message);
       if (!row) return NextResponse.json({ error: 'Match no existe' }, { status: 404 });
 
-      const winner_id = score_a > score_b ? row.team_a_id : row.team_b_id;
+      let winner_id: string | null = null;
+      let status: 'in_progress' | 'done' = 'in_progress';
+      if (score_a === 2 && score_b < 2) {
+        winner_id = row.team_a_id;
+        status = 'done';
+      } else if (score_b === 2 && score_a < 2) {
+        winner_id = row.team_b_id;
+        status = 'done';
+      }
 
       const { error: updErr } = await supabase
         .from('round_robin_matches')
@@ -96,12 +97,12 @@ export async function POST(request: Request) {
           score_a,
           score_b,
           winner_id,
-          status: 'done',
+          status,
           updated_at: new Date().toISOString(),
         })
         .eq('id', match_id);
       if (updErr) throw new Error(updErr.message);
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, status });
     }
 
     if (parsed.data.action === 'set_status') {
