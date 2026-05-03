@@ -3,6 +3,7 @@ import Countdown from './Countdown';
 type Props = { tournamentDate: string };
 
 const menu = [
+  ['Resultados', '/round-robin'],
   ['Registro', '#registro'],
   ['Formato', '#formato'],
   ['Premio', '#premio'],

@@ -242,7 +242,7 @@ export default async function LiveStats() {
               href="/round-robin"
               className="btn-secondary w-full text-center justify-center"
             >
-              Ver standings →
+              Ver resultados del torneo →
             </Link>
           </aside>
         </div>
