@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { isAuthed } from '@/lib/admin-auth';
-import { loadRoundRobin } from '@/lib/round-robin';
+import { loadRoundRobin, type RRMatch, type Standing, type TeamLite } from '@/lib/round-robin';
 import RoundRobinAdmin from '@/components/admin/RoundRobinAdmin';
 
 export const metadata: Metadata = { title: 'Admin · Round Robin' };
@@ -12,7 +12,9 @@ export const runtime = 'nodejs';
 export default async function AdminRoundRobinPage() {
   if (!(await isAuthed())) redirect('/admin/login');
 
-  let teams, matches, standings;
+  let teams: TeamLite[] = [];
+  let matches: RRMatch[] = [];
+  let standings: Standing[] = [];
   let error: string | null = null;
   try {
     const data = await loadRoundRobin();
@@ -21,9 +23,6 @@ export default async function AdminRoundRobinPage() {
     standings = data.standings;
   } catch (e) {
     error = e instanceof Error ? e.message : 'Error desconocido';
-    teams = [];
-    matches = [];
-    standings = [];
   }
 
   return (

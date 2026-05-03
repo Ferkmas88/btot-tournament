@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { loadRoundRobin } from '@/lib/round-robin';
+import { loadRoundRobin, type RRMatch, type Standing, type TeamLite } from '@/lib/round-robin';
 
 export const metadata: Metadata = {
   title: 'Standings · Papaque',
@@ -10,7 +10,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export default async function RoundRobinPublicPage() {
-  let teams, matches, standings;
+  let teams: TeamLite[] = [];
+  let matches: RRMatch[] = [];
+  let standings: Standing[] = [];
   let error: string | null = null;
   try {
     const data = await loadRoundRobin();
@@ -19,9 +21,6 @@ export default async function RoundRobinPublicPage() {
     standings = data.standings;
   } catch (e) {
     error = e instanceof Error ? e.message : 'Error cargando torneo';
-    teams = [];
-    matches = [];
-    standings = [];
   }
 
   const teamById = new Map(teams.map((t) => [t.id, t]));
