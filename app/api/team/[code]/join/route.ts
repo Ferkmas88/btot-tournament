@@ -57,12 +57,6 @@ export async function POST(request: Request, ctx: { params: Promise<{ code: stri
     }
 
     const submittedEmail = parsed.data.email.trim().toLowerCase();
-    if (team.captain_email && team.captain_email.trim().toLowerCase() === submittedEmail) {
-      return NextResponse.json(
-        { error: 'Ese email es el del capitán. Cada jugador necesita su propio email.' },
-        { status: 400 },
-      );
-    }
 
     const { data: members, error: memErr } = await supabase
       .from('team_members')
@@ -75,10 +69,16 @@ export async function POST(request: Request, ctx: { params: Promise<{ code: stri
 
     const existing = members ?? [];
 
-    // chequeo de email duplicado dentro del equipo
-    if (existing.some((m) => m.email && m.email.trim().toLowerCase() === submittedEmail)) {
+    // Chequeo unificado: email no debe coincidir ni con capitán ni con otro miembro.
+    // Mensaje genérico para evitar account enumeration.
+    const isCaptainEmail =
+      !!team.captain_email && team.captain_email.trim().toLowerCase() === submittedEmail;
+    const isMemberEmail = existing.some(
+      (m) => m.email && m.email.trim().toLowerCase() === submittedEmail,
+    );
+    if (isCaptainEmail || isMemberEmail) {
       return NextResponse.json(
-        { error: 'Ya hay otro jugador en este equipo con ese email.' },
+        { error: 'Ese email no se puede usar para este equipo. Usá uno distinto.' },
         { status: 400 },
       );
     }
