@@ -49,6 +49,29 @@ export default async function RoundRobinPublicPage() {
           </p>
         </header>
 
+        {/* TODO: cuando exista logica de scheduling, reemplazar este hardcode. */}
+        <div className="mb-10 border border-amber-gold/50 bg-amber-gold/5 p-5 text-center">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.95)] animate-pulse" />
+            <p className="font-mono text-[10px] tracking-[0.3em] text-emerald-400 uppercase">
+              Próxima partida
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="font-display text-2xl md:text-3xl text-white">SEGUIDORES DE ALBITO</div>
+            <div className="font-mono text-amber-gold">vs</div>
+            <div className="font-display text-2xl md:text-3xl text-white">LOS CHURRI CHURRI</div>
+          </div>
+          <a
+            href="https://twitch.tv/piterchuang"
+            target="_blank"
+            rel="noopener"
+            className="inline-block mt-4 font-mono text-xs uppercase tracking-wider text-amber-gold border border-amber-gold/50 px-4 py-2 hover:bg-amber-gold/15 transition"
+          >
+            Ver en vivo en Twitch →
+          </a>
+        </div>
+
         {error && (
           <div className="mb-6 p-4 border border-blood bg-blood/10 text-blood-light text-sm font-mono">
             {error}
