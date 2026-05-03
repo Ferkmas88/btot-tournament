@@ -66,6 +66,15 @@ export default function Hero({ tournamentDate }: Props) {
           </div>
 
           <div className="max-w-4xl">
+            <a
+              href="/round-robin"
+              className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 border border-emerald-400/50 bg-emerald-400/10 hover:bg-emerald-400/20 transition group"
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.95)] animate-pulse" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-emerald-400 group-hover:text-emerald-300">
+                EN VIVO · Resultados del torneo →
+              </span>
+            </a>
             <div className="stamp-heading mb-5">Torneo online · 2 de mayo</div>
 
             <div className="relative">
@@ -95,11 +104,15 @@ export default function Hero({ tournamentDate }: Props) {
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <a href="/inscribirse" className="btn-primary">
-                Inscribir mi equipo
+              <a href="/round-robin" className="btn-primary inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.95)] animate-pulse" />
+                Ver resultados en vivo →
               </a>
-              <a href="#formato" className="btn-secondary">
-                Ver formato
+              <a href="/inscribirse" className="btn-secondary">
+                Inscribir equipo
+              </a>
+              <a href="#formato" className="font-mono text-xs uppercase tracking-[0.2em] text-white/60 hover:text-white">
+                Formato →
               </a>
             </div>
 
