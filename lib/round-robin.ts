@@ -73,16 +73,20 @@ export function computeStandings(teams: TeamLite[], matches: RRMatch[]): Standin
 
     if (m.winner_id === m.team_a_id) {
       a.v += 1;
-      a.pts += 3;
       b.d += 1;
     } else if (m.winner_id === m.team_b_id) {
       b.v += 1;
-      b.pts += 3;
       a.d += 1;
     }
   }
 
-  for (const s of map.values()) s.gd = s.gw - s.gl;
+  // Pts = 3 por cada juego individual ganado (no por match BO3).
+  // Asi 2-0 = 6 pts, 2-1 ganador = 6 pts + perdedor = 3 pts.
+  // Recompensa partidas peleadas y refleja calidad jugada.
+  for (const s of map.values()) {
+    s.gd = s.gw - s.gl;
+    s.pts = s.gw * 3;
+  }
 
   return Array.from(map.values()).sort((x, y) => {
     if (y.pts !== x.pts) return y.pts - x.pts;
