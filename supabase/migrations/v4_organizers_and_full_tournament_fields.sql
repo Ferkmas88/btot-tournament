@@ -42,6 +42,14 @@ create policy "organizers_public_read" on public.organizers
 -- -----------------------------------------
 -- TOURNAMENTS — campos completos del flyer
 -- -----------------------------------------
+
+-- v3 puso check constraint con solo single_elim|double_elim|round_robin.
+-- Papaque #1 es groups_playoffs y futuros organizadores van a querer mas
+-- formatos. Expandimos el check.
+alter table public.tournaments drop constraint if exists tournaments_format_check;
+alter table public.tournaments add constraint tournaments_format_check
+  check (format in ('single_elim', 'double_elim', 'round_robin', 'groups_playoffs', 'swiss', 'gsl'));
+
 alter table public.tournaments
   add column if not exists organizer_id uuid references public.organizers(id) on delete restrict;
 
