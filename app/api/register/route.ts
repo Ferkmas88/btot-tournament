@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { getServiceClient, PROVINCES } from '@/lib/supabase';
 import { generateJoinCode } from '@/lib/codes';
 import { getUser } from '@/lib/auth';
 import { isSameOrigin } from '@/lib/csrf';
 import { getActiveTournament } from '@/lib/tournaments';
+import { createCheckout } from '@/lib/payments/provider';
 import {
   isValidEmail,
   isValidName,
@@ -108,12 +110,15 @@ export async function POST(request: Request) {
     }
 
     const isPaid = Number(tournament.entry_fee_usd) > 0;
+    const paymentRef = randomUUID();
     const baseInsert = {
       ...parsed.data,
       tournament_id: tournament.id,
       captain_user_id: user.id,
       payment_status: isPaid ? 'pending' : 'free',
       payment_amount_usd: isPaid ? tournament.entry_fee_usd : 0,
+      payment_ref: isPaid ? paymentRef : null,
+      payment_provider: isPaid ? 'lemonsqueezy' : null,
     } as const;
 
     for (let attempt = 0; attempt < MAX_CODE_RETRIES; attempt++) {
@@ -125,14 +130,38 @@ export async function POST(request: Request) {
         .single();
 
       if (!error && data) {
-        // Si el torneo es pago, el siguiente paso es redirigir a checkout
-        // (Lemon Squeezy). Eso lo agrega el frente 3 — por ahora el front
-        // recibe `payment_required: true` y muestra mensaje "config pendiente".
+        if (isPaid) {
+          try {
+            const checkout = await createCheckout({
+              tournament,
+              teamId: data.id,
+              paymentRef,
+              captainEmail: parsed.data.captain_email,
+              captainName: parsed.data.captain_name,
+              teamName: parsed.data.team_name,
+            });
+            return NextResponse.json({
+              ok: true,
+              join_code: data.join_code,
+              payment_required: true,
+              checkout_url: checkout.url,
+            });
+          } catch (paymentErr) {
+            const message =
+              paymentErr instanceof Error ? paymentErr.message : 'error pagos';
+            // El equipo quedó como pending. Idealmente el user puede reintentar
+            // checkout desde /equipo/{code}, pero por ahora devolvemos el error.
+            return NextResponse.json(
+              { error: `Equipo creado pero falló el checkout: ${message}` },
+              { status: 502 },
+            );
+          }
+        }
+
         return NextResponse.json({
           ok: true,
           join_code: data.join_code,
-          payment_required: isPaid,
-          team_id: data.id,
+          payment_required: false,
         });
       }
 

@@ -169,6 +169,16 @@ export default function RegisterWizard({ prefillCaptainName, prefillCaptainEmail
         } catch {
           /* ignore */
         }
+      }
+
+      // Torneo pago: redirigir al checkout hosted (Lemon Squeezy).
+      const checkoutUrl: string | undefined = json.checkout_url;
+      if (json.payment_required && checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
+
+      if (code) {
         router.push(`/equipo/${code}`);
         return;
       }

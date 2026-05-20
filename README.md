@@ -126,6 +126,66 @@ public/
 
 ---
 
+## Setup Lemon Squeezy (ticket único)
+
+Validamos el modelo "paga-por-torneo" con Lemon Squeezy en vez de Stripe porque
+LS es merchant-of-record (maneja tax/VAT/legal sin que necesitemos LLC en US).
+Las fees son ~5% + $0.50 vs Stripe 2.9% + $0.30 — diferencia trivial mientras
+estamos validando. La migración a Stripe es swap detrás de `lib/payments/provider.ts`
+cuando Fernando tenga LLC en US.
+
+Pasos (Fernando hace esto la primera vez):
+
+1. Crear cuenta en https://www.lemonsqueezy.com (modo test primero).
+2. Crear una **Store** desde el dashboard. Copiar el **Store ID** (URL: `/stores/123` → ID `123`).
+3. En la store crear un **Product** tipo "One-time payment" llamado `Inscripción Torneo Papaque`.
+   - Crear un **Variant** con precio placeholder (USD 1) — el precio real se pisa en cada checkout via `custom_price`.
+   - Copiar el **Variant ID**.
+4. Settings → API → generar **API Key** con permisos de store.
+5. Settings → Webhooks → New webhook:
+   - URL: `https://papaque.online/api/lemonsqueezy/webhook`
+   - Events: `order_created`, `order_refunded`
+   - Copiar el **Signing Secret**.
+6. Pegar en `.env.local` (y en Vercel env):
+   ```
+   LEMONSQUEEZY_API_KEY=lemonsqueezy_xxx
+   LEMONSQUEEZY_STORE_ID=12345
+   LEMONSQUEEZY_VARIANT_ID_TOURNAMENT_ENTRY=67890
+   LEMONSQUEEZY_WEBHOOK_SECRET=whsec_xxx
+   NEXT_PUBLIC_SITE_URL=https://papaque.online
+   ```
+7. Crear un torneo nuevo en Supabase con `entry_fee_usd > 0` y `status='open'`:
+   ```sql
+   insert into tournaments
+     (slug, name, format, max_teams, entry_fee_usd, status, starts_at)
+   values
+     ('papaque-2', 'Papaque #2', 'round_robin', 8, 5.00, 'open', '2026-06-15 18:00-04');
+   ```
+8. Probar inscripción end-to-end en modo test de LS antes de pasar a producción.
+
+Mientras `entry_fee_usd = 0` (como Papaque #1), el flow de inscripción NO llama
+a LS — los equipos se registran como `payment_status='free'` y el sitio funciona
+sin esta config.
+
+## Setup Resend (confirmaciones email)
+
+El webhook de LS dispara un email de confirmación al capitán via Resend.
+
+1. Crear cuenta en https://resend.com.
+2. Verificar dominio `papaque.online` (DNS records que LS lista).
+3. Settings → API Keys → create.
+4. Pegar en `.env.local` y Vercel:
+   ```
+   RESEND_API_KEY=re_xxx
+   RESEND_FROM_EMAIL=noreply@papaque.online
+   ```
+
+Si `RESEND_API_KEY` no está seteada, el webhook sigue confirmando el pago en
+DB pero loguea el error de envío. El capitán siempre puede ver su equipo en
+`/equipo/{join_code}`.
+
+---
+
 ## Siguiente sesión (pending)
 
 - Poblar `components/History.tsx` con nombres reales de torneos, YouTubers cubanos, fechas verificadas. **Requiere research web dedicado — no inventar.**
