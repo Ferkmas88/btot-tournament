@@ -36,5 +36,11 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Solo correr en rutas que necesitan refresh de sesion (auth + perfil + chat).
   // Esto evita que un fallo de middleware tumbe la home, /admin, /equipo, etc.
-  matcher: ['/auth/:path*', '/perfil/:path*', '/chat/:path*'],
+  matcher: [
+    '/auth/:path*',
+    '/perfil/:path*',
+    '/chat/:path*',
+    '/dashboard/:path*',
+    '/organizer/:path*',
+  ],
 };

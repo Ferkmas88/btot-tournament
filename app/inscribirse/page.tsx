@@ -1,90 +1,46 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import RegisterWizard from '@/components/RegisterWizard';
-import ResumeTeamBanner from '@/components/ResumeTeamBanner';
-import RulesGate from '@/components/RulesGate';
-import SubscribeGate from '@/components/SubscribeGate';
-import { getCurrentProfile, getUser } from '@/lib/auth';
-import { getActiveTournament, getOrganizer, whatsappLink } from '@/lib/tournaments';
+import { getActiveTournament } from '@/lib/tournaments';
 
 export const metadata: Metadata = {
   title: 'Inscribir equipo · Papaque',
-  description: 'Inscribe tu equipo al torneo de Dota 2.',
+  description: 'Inscribite al torneo activo.',
 };
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-export default async function InscribirsePage() {
-  const user = await getUser();
-  if (!user) {
-    redirect('/auth/login?next=/inscribirse');
-  }
-  const profile = await getCurrentProfile();
-  const captainName = profile?.steam_persona ?? profile?.display_name ?? user.email.split('@')[0];
-
+// Compat: /inscribirse redirige al torneo activo. Si no hay torneo abierto,
+// mostramos un mensaje con link al listado.
+export default async function InscribirseRedirect() {
   const tournament = await getActiveTournament();
-  const organizer = tournament?.organizer_id ? await getOrganizer(tournament.organizer_id) : null;
-  const waHref = whatsappLink(organizer?.contact_whatsapp);
+  if (tournament) {
+    redirect(`/torneos/${tournament.slug}/inscribirse`);
+  }
 
   return (
-    <main className="min-h-screen px-4 py-10 md:py-14">
-      <div className="max-w-3xl mx-auto mb-8">
-        <Link
-          href="/"
-          className="font-mono text-xs text-white/50 hover:text-white inline-flex items-center gap-1"
-        >
-          ← Volver al sitio
-        </Link>
+    <main className="min-h-screen px-4 py-14 md:py-20">
+      <div className="max-w-xl mx-auto text-center">
+        <p className="font-mono text-[10px] tracking-[0.3em] text-amber-gold/80 mb-3">
+          PAPAQUE · INSCRIPCIÓN
+        </p>
+        <h1 className="font-display text-3xl md:text-4xl text-white mb-4">
+          No hay torneos abiertos
+        </h1>
+        <p className="text-white/60 text-sm mb-8">
+          Por ahora no hay ningún torneo recibiendo inscripciones. Mirá el listado completo o
+          suscribite a la lista para enterarte cuando se abra el próximo.
+        </p>
+        <div className="flex flex-col items-center gap-3">
+          <Link href="/torneos" className="btn-primary">
+            Ver todos los torneos →
+          </Link>
+          <Link href="/" className="font-mono text-xs text-white/50 hover:text-white">
+            ← Volver al sitio
+          </Link>
+        </div>
       </div>
-
-      <ResumeTeamBanner />
-
-      <SubscribeGate>
-        <RulesGate>
-          <div className="max-w-2xl mx-auto mb-8">
-            <header className="text-center">
-              <p className="font-mono text-[10px] tracking-[0.3em] text-amber-gold/80 mb-2">
-                {tournament ? tournament.name.toUpperCase() : 'PAPAQUE · INSCRIPCIÓN'}
-              </p>
-              <h1 className="font-display text-4xl md:text-5xl text-white">
-                Inscribí tu <span className="text-amber-gold">equipo</span>
-              </h1>
-              <p className="text-white/60 text-sm mt-3 max-w-md mx-auto">
-                Logueado como <span className="text-amber-gold">{captainName}</span>. Llename
-                los datos del equipo y los 4 jugadores entran luego con su propio link.
-              </p>
-
-              {tournament && Number(tournament.entry_fee_per_team_usd) > 0 && (
-                <div className="mt-6 inline-flex flex-col items-center gap-1 border border-amber-gold/30 bg-amber-gold/5 px-5 py-3">
-                  <div className="font-display text-2xl text-amber-gold">
-                    USD ${Number(tournament.entry_fee_per_team_usd).toFixed(0)}
-                    <span className="font-mono text-xs text-white/55 ml-2 tracking-widest">/EQUIPO</span>
-                  </div>
-                  {Number(tournament.entry_fee_per_player_usd) > 0 && (
-                    <div className="font-mono text-[11px] text-white/55 tracking-[0.18em]">
-                      {tournament.team_size} jugadores × USD ${Number(tournament.entry_fee_per_player_usd).toFixed(0)}/jugador
-                    </div>
-                  )}
-                </div>
-              )}
-            </header>
-          </div>
-
-          <RegisterWizard
-            prefillCaptainName={captainName}
-            prefillCaptainEmail={user.email}
-            tournamentName={tournament?.name ?? null}
-            entryFeePerTeamUsd={tournament ? Number(tournament.entry_fee_per_team_usd) : 0}
-            entryFeePerPlayerUsd={tournament ? Number(tournament.entry_fee_per_player_usd) : 0}
-            teamSize={tournament?.team_size ?? 5}
-            paymentMethods={tournament?.payment_methods ?? ['card']}
-            organizerName={organizer?.display_name ?? null}
-            organizerWhatsappHref={waHref}
-            organizerWhatsappRaw={organizer?.contact_whatsapp ?? null}
-          />
-        </RulesGate>
-      </SubscribeGate>
     </main>
   );
 }

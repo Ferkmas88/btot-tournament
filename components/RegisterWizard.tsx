@@ -67,6 +67,7 @@ function fieldError(name: keyof FormData, value: string): string | null {
 type Props = {
   prefillCaptainName?: string;
   prefillCaptainEmail?: string;
+  tournamentSlug?: string;
   tournamentName?: string | null;
   entryFeePerTeamUsd?: number;
   entryFeePerPlayerUsd?: number;
@@ -80,6 +81,7 @@ type Props = {
 export default function RegisterWizard({
   prefillCaptainName,
   prefillCaptainEmail,
+  tournamentSlug,
   tournamentName,
   entryFeePerTeamUsd = 0,
   entryFeePerPlayerUsd = 0,
@@ -171,6 +173,7 @@ export default function RegisterWizard({
       const payload: Record<string, string> = { ...data };
       if (!payload.referral_source) delete payload.referral_source;
       if (isPaid) payload.payment_method = paymentMethod;
+      if (tournamentSlug) payload.tournament_slug = tournamentSlug;
 
       const res = await fetch('/api/register', {
         method: 'POST',

@@ -5,7 +5,7 @@ import { getServiceClient, PROVINCES } from '@/lib/supabase';
 import { generateJoinCode } from '@/lib/codes';
 import { getUser } from '@/lib/auth';
 import { isSameOrigin } from '@/lib/csrf';
-import { getActiveTournament } from '@/lib/tournaments';
+import { getActiveTournament, getTournamentBySlug } from '@/lib/tournaments';
 import { createCheckout } from '@/lib/payments/provider';
 import {
   isValidEmail,
@@ -61,10 +61,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const tournament = await getActiveTournament();
+  // tournament_slug es opcional. Si viene, registramos contra ese torneo
+  // específico (siempre que esté abierto). Si no, usamos active tournament.
+  const requestedSlug =
+    typeof (body as Record<string, unknown>).tournament_slug === 'string'
+      ? ((body as Record<string, unknown>).tournament_slug as string)
+      : null;
+
+  let tournament = requestedSlug ? await getTournamentBySlug(requestedSlug) : null;
+  if (!tournament) tournament = await getActiveTournament();
+
   if (!tournament) {
     return NextResponse.json(
       { error: 'No hay torneo abierto a inscripción. Suscribite para enterarte del próximo.' },
+      { status: 409 },
+    );
+  }
+  if (tournament.status !== 'open') {
+    return NextResponse.json(
+      { error: 'Las inscripciones de este torneo no están abiertas.' },
       { status: 409 },
     );
   }
