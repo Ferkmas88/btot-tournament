@@ -18,7 +18,6 @@ type MessageRow = {
 type ProfileRow = {
   id: string;
   display_name: string | null;
-  email: string;
   steam_persona: string | null;
   steam_avatar_url: string | null;
 };
@@ -78,7 +77,7 @@ export async function GET(request: Request) {
   if (ids.length) {
     const { data: profiles } = await admin
       .from('profiles')
-      .select('id, display_name, email, steam_persona, steam_avatar_url')
+      .select('id, display_name, steam_persona, steam_avatar_url')
       .in('id', ids);
     (profiles ?? []).forEach((p) => profilesMap.set(p.id, p as ProfileRow));
   }
@@ -88,7 +87,7 @@ export async function GET(request: Request) {
     return {
       ...m,
       author: {
-        display_name: p?.steam_persona ?? p?.display_name ?? p?.email ?? 'anónimo',
+        display_name: p?.steam_persona ?? p?.display_name ?? 'anónimo',
         avatar_url: p?.steam_avatar_url ?? null,
       },
     };

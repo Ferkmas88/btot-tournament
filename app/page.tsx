@@ -20,9 +20,9 @@ export default function HomePage() {
         <img
           src="/poster-teams.jpg"
           alt="P'APA QUE!? — Equipos LATAM"
-          className="w-full object-cover max-h-[480px] object-top"
+          className="w-full h-auto block"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-transparent to-ink-950/60" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-ink-950" />
       </section>
 
       <UpcomingMatch />

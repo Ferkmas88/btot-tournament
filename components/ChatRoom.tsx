@@ -89,15 +89,15 @@ export default function ChatRoom({ currentUser, channels, initialChannelKey }: P
           const m = payload.new as Message;
           // Fetch author info para el mensaje recién insertado.
           const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name, steam_persona, steam_avatar_url, email')
+            .from('public_profiles')
+            .select('display_name, steam_persona, steam_avatar_url')
             .eq('id', m.user_id)
             .maybeSingle();
           const enriched: Message = {
             ...m,
             author: {
               display_name:
-                profile?.steam_persona ?? profile?.display_name ?? profile?.email ?? 'anónimo',
+                profile?.steam_persona ?? profile?.display_name ?? 'anónimo',
               avatar_url: profile?.steam_avatar_url ?? null,
             },
           };
