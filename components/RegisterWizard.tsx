@@ -64,11 +64,22 @@ function fieldError(name: keyof FormData, value: string): string | null {
   }
 }
 
-export default function RegisterWizard() {
+type Props = {
+  prefillCaptainName?: string;
+  prefillCaptainEmail?: string;
+};
+
+export default function RegisterWizard({ prefillCaptainName, prefillCaptainEmail }: Props = {}) {
   const router = useRouter();
 
+  const initial: FormData = {
+    ...EMPTY,
+    captain_name: prefillCaptainName ?? '',
+    captain_email: prefillCaptainEmail ?? '',
+  };
+
   const [step, setStep] = useState(1);
-  const [data, setData] = useState<FormData>(EMPTY);
+  const [data, setData] = useState<FormData>(initial);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

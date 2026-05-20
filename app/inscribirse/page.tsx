@@ -1,16 +1,26 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import RegisterWizard from '@/components/RegisterWizard';
 import ResumeTeamBanner from '@/components/ResumeTeamBanner';
 import RulesGate from '@/components/RulesGate';
 import SubscribeGate from '@/components/SubscribeGate';
+import { getCurrentProfile, getUser } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: 'Inscribir equipo · Papaque',
   description: 'Inscribe tu equipo de 5 jugadores al torneo de Dota 2.',
 };
 
-export default function InscribirsePage() {
+export const dynamic = 'force-dynamic';
+
+export default async function InscribirsePage() {
+  const user = await getUser();
+  if (!user) {
+    redirect('/auth/login?next=/inscribirse');
+  }
+  const profile = await getCurrentProfile();
+  const captainName = profile?.steam_persona ?? profile?.display_name ?? user.email.split('@')[0];
   return (
     <main className="min-h-screen px-4 py-10 md:py-14">
       <div className="max-w-3xl mx-auto mb-8">
@@ -35,11 +45,15 @@ export default function InscribirsePage() {
                 Inscribí tu <span className="text-amber-gold">equipo</span>
               </h1>
               <p className="text-white/60 text-sm mt-3 max-w-md mx-auto">
-                Llename los datos del equipo y de los 5 jugadores. Te tomará 2 minutos.
+                Logueado como <span className="text-amber-gold">{captainName}</span>. Llename
+                los datos del equipo y los 4 jugadores entran luego con su propio link.
               </p>
             </header>
           </div>
-          <RegisterWizard />
+          <RegisterWizard
+            prefillCaptainName={captainName}
+            prefillCaptainEmail={user.email}
+          />
         </RulesGate>
       </SubscribeGate>
     </main>
