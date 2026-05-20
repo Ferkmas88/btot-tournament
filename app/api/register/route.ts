@@ -4,6 +4,7 @@ import { getServiceClient, PROVINCES } from '@/lib/supabase';
 import { generateJoinCode } from '@/lib/codes';
 import { getUser } from '@/lib/auth';
 import { isSameOrigin } from '@/lib/csrf';
+import { getActiveTournament } from '@/lib/tournaments';
 import {
   isValidEmail,
   isValidName,
@@ -28,7 +29,6 @@ const schema = z.object({
 });
 
 const MAX_CODE_RETRIES = 5;
-const MAX_TEAMS = Number.parseInt(process.env.MAX_TEAMS ?? '6', 10);
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
@@ -59,49 +59,81 @@ export async function POST(request: Request) {
     );
   }
 
+  const tournament = await getActiveTournament();
+  if (!tournament) {
+    return NextResponse.json(
+      { error: 'No hay torneo abierto a inscripción. Suscribite para enterarte del próximo.' },
+      { status: 409 },
+    );
+  }
+
   try {
     const supabase = getServiceClient();
 
+    // Cupos: contar SOLO equipos del torneo activo, y solo los ya pagados/free
+    // o pendientes recientes (los pending viejos sin pago se ignoran para no
+    // bloquear cupos por carritos abandonados).
     const { count, error: countErr } = await supabase
       .from('teams')
-      .select('id', { count: 'exact', head: true });
+      .select('id', { count: 'exact', head: true })
+      .eq('tournament_id', tournament.id)
+      .in('payment_status', ['paid', 'free']);
 
     if (countErr) {
       return NextResponse.json({ error: 'No pudimos verificar cupos' }, { status: 500 });
     }
 
-    if ((count ?? 0) >= MAX_TEAMS) {
+    if ((count ?? 0) >= tournament.max_teams) {
       return NextResponse.json(
         {
-          error: `Cupos completos (${MAX_TEAMS} equipos máx). Si tu registro fue cancelado por error, escribinos al Discord.`,
+          error: `Cupos completos (${tournament.max_teams} equipos máx).`,
         },
         { status: 409 },
       );
     }
 
-    // Block: si user ya tiene equipo como capitán, no permitir crear otro.
+    // Block: si user ya tiene equipo confirmado EN ESTE TORNEO, no permitir otro.
     const { count: existingCount } = await supabase
       .from('teams')
       .select('id', { count: 'exact', head: true })
-      .eq('captain_user_id', user.id);
+      .eq('captain_user_id', user.id)
+      .eq('tournament_id', tournament.id)
+      .in('payment_status', ['paid', 'free', 'pending']);
 
     if ((existingCount ?? 0) > 0) {
       return NextResponse.json(
-        { error: 'Ya creaste un equipo. No podés crear más de uno.' },
+        { error: 'Ya creaste un equipo en este torneo.' },
         { status: 409 },
       );
     }
+
+    const isPaid = Number(tournament.entry_fee_usd) > 0;
+    const baseInsert = {
+      ...parsed.data,
+      tournament_id: tournament.id,
+      captain_user_id: user.id,
+      payment_status: isPaid ? 'pending' : 'free',
+      payment_amount_usd: isPaid ? tournament.entry_fee_usd : 0,
+    } as const;
 
     for (let attempt = 0; attempt < MAX_CODE_RETRIES; attempt++) {
       const join_code = generateJoinCode();
       const { data, error } = await supabase
         .from('teams')
-        .insert({ ...parsed.data, join_code, captain_user_id: user.id })
+        .insert({ ...baseInsert, join_code })
         .select('id, join_code')
         .single();
 
       if (!error && data) {
-        return NextResponse.json({ ok: true, join_code: data.join_code });
+        // Si el torneo es pago, el siguiente paso es redirigir a checkout
+        // (Lemon Squeezy). Eso lo agrega el frente 3 — por ahora el front
+        // recibe `payment_required: true` y muestra mensaje "config pendiente".
+        return NextResponse.json({
+          ok: true,
+          join_code: data.join_code,
+          payment_required: isPaid,
+          team_id: data.id,
+        });
       }
 
       if (error?.code === '23505') {

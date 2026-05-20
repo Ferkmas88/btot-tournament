@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { isAuthed } from '@/lib/admin-auth';
 import { getServiceClient } from '@/lib/supabase';
 import { generatePairs } from '@/lib/round-robin';
+import { getActiveOrLatestTournament } from '@/lib/tournaments';
 
 export const runtime = 'nodejs';
 
@@ -44,27 +45,40 @@ export async function POST(request: Request) {
   }
 
   const supabase = getServiceClient();
+  const tournament = await getActiveOrLatestTournament();
+  if (!tournament) {
+    return NextResponse.json({ error: 'No hay torneo activo' }, { status: 409 });
+  }
 
   try {
     if (parsed.data.action === 'generate') {
       const { data: teams, error } = await supabase
         .from('teams')
         .select('id')
+        .eq('tournament_id', tournament.id)
         .in('status', ['pending', 'confirmed'])
+        .in('payment_status', ['paid', 'free'])
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
       const ids = (teams ?? []).map((t) => t.id as string);
       if (ids.length < 2) {
         return NextResponse.json(
-          { error: 'Necesitás al menos 2 equipos inscritos' },
+          { error: 'Necesitás al menos 2 equipos inscritos y pagos' },
           { status: 400 },
         );
       }
       const pairs = generatePairs(ids);
-      const rows = pairs.map((p) => ({ team_a_id: p.a, team_b_id: p.b }));
+      const rows = pairs.map((p) => ({
+        team_a_id: p.a,
+        team_b_id: p.b,
+        tournament_id: tournament.id,
+      }));
       const { error: insErr, data: inserted } = await supabase
         .from('round_robin_matches')
-        .upsert(rows, { onConflict: 'team_a_id,team_b_id', ignoreDuplicates: true })
+        .upsert(rows, {
+          onConflict: 'tournament_id,team_a_id,team_b_id',
+          ignoreDuplicates: true,
+        })
         .select('id');
       if (insErr) throw new Error(insErr.message);
       return NextResponse.json({ ok: true, generated: pairs.length, new_rows: inserted?.length ?? 0 });
@@ -122,7 +136,10 @@ export async function POST(request: Request) {
     }
 
     if (parsed.data.action === 'reset') {
-      const { error } = await supabase.from('round_robin_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      const { error } = await supabase
+        .from('round_robin_matches')
+        .delete()
+        .eq('tournament_id', tournament.id);
       if (error) throw new Error(error.message);
       return NextResponse.json({ ok: true });
     }

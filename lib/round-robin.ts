@@ -1,4 +1,5 @@
 import { getServiceClient } from '@/lib/supabase';
+import { getActiveOrLatestTournament } from '@/lib/tournaments';
 
 export type RRMatch = {
   id: string;
@@ -24,22 +25,29 @@ export type Standing = {
   gd: number; // game diff
 };
 
-export async function loadRoundRobin(): Promise<{
+export async function loadRoundRobin(tournamentId?: string): Promise<{
   teams: TeamLite[];
   matches: RRMatch[];
   standings: Standing[];
+  tournamentId: string | null;
 }> {
   const supabase = getServiceClient();
+  const tid = tournamentId ?? (await getActiveOrLatestTournament())?.id ?? null;
+
+  const teamsQuery = supabase
+    .from('teams')
+    .select('id, team_name, province')
+    .in('status', ['pending', 'confirmed'])
+    .order('created_at', { ascending: true });
+
+  const matchesQuery = supabase
+    .from('round_robin_matches')
+    .select('id, team_a_id, team_b_id, score_a, score_b, winner_id, status, scheduled_at')
+    .order('created_at', { ascending: true });
+
   const [teamsRes, matchesRes] = await Promise.all([
-    supabase
-      .from('teams')
-      .select('id, team_name, province')
-      .in('status', ['pending', 'confirmed'])
-      .order('created_at', { ascending: true }),
-    supabase
-      .from('round_robin_matches')
-      .select('id, team_a_id, team_b_id, score_a, score_b, winner_id, status, scheduled_at')
-      .order('created_at', { ascending: true }),
+    tid ? teamsQuery.eq('tournament_id', tid) : teamsQuery,
+    tid ? matchesQuery.eq('tournament_id', tid) : matchesQuery,
   ]);
 
   if (teamsRes.error) throw new Error(teamsRes.error.message);
@@ -49,7 +57,7 @@ export async function loadRoundRobin(): Promise<{
   const matches = (matchesRes.data ?? []) as RRMatch[];
 
   const standings = computeStandings(teams, matches);
-  return { teams, matches, standings };
+  return { teams, matches, standings, tournamentId: tid };
 }
 
 export function computeStandings(teams: TeamLite[], matches: RRMatch[]): Standing[] {

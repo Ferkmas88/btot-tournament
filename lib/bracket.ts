@@ -1,4 +1,5 @@
 import { getServiceClient } from '@/lib/supabase';
+import { getActiveOrLatestTournament } from '@/lib/tournaments';
 
 export type Slot = 'cuartos1' | 'cuartos2' | 'semi1' | 'semi2' | 'final';
 
@@ -26,19 +27,24 @@ export type MatchView = MatchRow & {
   winner: TeamLite | null;
 };
 
-export async function loadBracket(): Promise<{
+export async function loadBracket(tournamentId?: string): Promise<{
   matches: Record<Slot, MatchView>;
   teams: TeamLite[];
 }> {
   const supabase = getServiceClient();
 
+  const tid = tournamentId ?? (await getActiveOrLatestTournament())?.id ?? null;
+
+  const matchesQuery = supabase.from('matches').select('*');
+  const teamsQuery = supabase
+    .from('teams')
+    .select('id, team_name, province')
+    .in('status', ['pending', 'confirmed'])
+    .order('created_at', { ascending: true });
+
   const [matchesRes, teamsRes] = await Promise.all([
-    supabase.from('matches').select('*'),
-    supabase
-      .from('teams')
-      .select('id, team_name, province')
-      .in('status', ['pending', 'confirmed'])
-      .order('created_at', { ascending: true }),
+    tid ? matchesQuery.eq('tournament_id', tid) : matchesQuery,
+    tid ? teamsQuery.eq('tournament_id', tid) : teamsQuery,
   ]);
 
   if (matchesRes.error) throw new Error(matchesRes.error.message);
