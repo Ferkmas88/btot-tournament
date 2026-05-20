@@ -1,6 +1,6 @@
 import Countdown from './Countdown';
 
-type Props = { tournamentDate: string };
+type Props = { tournamentDate: string; tba?: boolean; telegramInvite?: string };
 
 const menu = [
   ['Resultados', '/round-robin'],
@@ -9,7 +9,9 @@ const menu = [
   ['Premio', '#premio'],
 ];
 
-export default function Hero({ tournamentDate }: Props) {
+export default function Hero({ tournamentDate, tba = false, telegramInvite }: Props) {
+  const joinHref = telegramInvite || process.env.NEXT_PUBLIC_DISCORD_INVITE || '#';
+  const joinLabel = telegramInvite ? 'Únete al Telegram' : 'Únete a la comunidad';
   return (
     <section className="relative min-h-[94vh] overflow-hidden px-4 py-6 md:px-6 md:py-8">
       {/* Static fallback — shows if video blocked */}
@@ -76,13 +78,24 @@ export default function Hero({ tournamentDate }: Props) {
             ))}
           </div>
 
-          {/* Mobile: countdown compact strip */}
+          {/* Mobile: countdown compact strip (or TBA banner) */}
           <div className="lg:hidden mb-5 flex items-center justify-between gap-3 border border-white/10 bg-black/40 px-4 py-3">
             <div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/40">Próxima partida</div>
-              <div className="font-display text-lg text-white">Cuenta regresiva</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/40">Próximo torneo</div>
+              <div className="font-display text-lg text-white">{tba ? 'TBA' : 'Cuenta regresiva'}</div>
             </div>
-            <Countdown isoDate={tournamentDate} compact />
+            {tba ? (
+              <a
+                href={joinHref}
+                className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-gold border border-amber-gold/40 px-3 py-2"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {telegramInvite ? 'Telegram →' : 'Unirse →'}
+              </a>
+            ) : (
+              <Countdown isoDate={tournamentDate} compact />
+            )}
           </div>
 
           <div className="max-w-4xl">
@@ -95,7 +108,7 @@ export default function Hero({ tournamentDate }: Props) {
                 EN VIVO · Resultados del torneo →
               </span>
             </a>
-            <div className="stamp-heading mb-5">Torneo online · 2 de mayo</div>
+            <div className="stamp-heading mb-5">{tba ? 'Próximo torneo · TBA' : 'Torneo online · 2 de mayo'}</div>
 
             <div className="relative">
               <div
@@ -124,16 +137,34 @@ export default function Hero({ tournamentDate }: Props) {
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <a href="/round-robin" className="btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.95)] animate-pulse" />
-                Ver resultados en vivo →
-              </a>
-              <a href="/inscribirse" className="btn-secondary w-full text-center sm:w-auto">
-                Inscribir equipo
-              </a>
-              <a href="#formato" className="font-mono text-xs uppercase tracking-[0.2em] text-white/60 hover:text-white">
-                Formato →
-              </a>
+              {tba ? (
+                <>
+                  <a
+                    href={joinHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto"
+                  >
+                    {joinLabel} →
+                  </a>
+                  <a href="/round-robin" className="btn-secondary w-full text-center sm:w-auto">
+                    Ver torneo anterior
+                  </a>
+                </>
+              ) : (
+                <>
+                  <a href="/round-robin" className="btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.95)] animate-pulse" />
+                    Ver resultados en vivo →
+                  </a>
+                  <a href="/inscribirse" className="btn-secondary w-full text-center sm:w-auto">
+                    Inscribir equipo
+                  </a>
+                  <a href="#formato" className="font-mono text-xs uppercase tracking-[0.2em] text-white/60 hover:text-white">
+                    Formato →
+                  </a>
+                </>
+              )}
             </div>
 
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">

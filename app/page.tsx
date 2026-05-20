@@ -8,12 +8,21 @@ import Footer from '@/components/Footer';
 
 export const dynamic = 'force-dynamic';
 
+function isFutureDate(iso: string | undefined): boolean {
+  if (!iso) return false;
+  const t = Date.parse(iso);
+  return Number.isFinite(t) && t > Date.now();
+}
+
 export default function HomePage() {
-  const tournamentDate = process.env.NEXT_PUBLIC_TOURNAMENT_DATE ?? '2026-05-02T18:00:00-04:00';
+  const rawDate = process.env.NEXT_PUBLIC_TOURNAMENT_DATE;
+  const tba = !isFutureDate(rawDate);
+  const tournamentDate = rawDate ?? '2026-12-31T18:00:00-04:00';
+  const telegramInvite = process.env.NEXT_PUBLIC_TELEGRAM_INVITE;
 
   return (
     <main>
-      <Hero tournamentDate={tournamentDate} />
+      <Hero tournamentDate={tournamentDate} tba={tba} telegramInvite={telegramInvite} />
 
       {/* Poster LATAM teams */}
       <section className="relative overflow-hidden">
@@ -25,7 +34,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-ink-950" />
       </section>
 
-      <UpcomingMatch />
+      {!tba && <UpcomingMatch />}
       <LiveStats />
       <Prize />
       <Format />
