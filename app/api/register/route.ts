@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { getServiceClient, PROVINCES } from '@/lib/supabase';
 import { generateJoinCode } from '@/lib/codes';
 import { getUser } from '@/lib/auth';
 import { isSameOrigin } from '@/lib/csrf';
+import { getActiveTournament, getTournamentBySlug } from '@/lib/tournaments';
+import { createCheckout } from '@/lib/payments/provider';
 import {
   isValidEmail,
   isValidName,
@@ -28,7 +31,6 @@ const schema = z.object({
 });
 
 const MAX_CODE_RETRIES = 5;
-const MAX_TEAMS = Number.parseInt(process.env.MAX_TEAMS ?? '6', 10);
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
@@ -59,49 +61,138 @@ export async function POST(request: Request) {
     );
   }
 
+  // tournament_slug es opcional. Si viene, registramos contra ese torneo
+  // específico (siempre que esté abierto). Si no, usamos active tournament.
+  const requestedSlug =
+    typeof (body as Record<string, unknown>).tournament_slug === 'string'
+      ? ((body as Record<string, unknown>).tournament_slug as string)
+      : null;
+
+  let tournament = requestedSlug ? await getTournamentBySlug(requestedSlug) : null;
+  if (!tournament) tournament = await getActiveTournament();
+
+  if (!tournament) {
+    return NextResponse.json(
+      { error: 'No hay torneo abierto a inscripción. Suscribite para enterarte del próximo.' },
+      { status: 409 },
+    );
+  }
+  if (tournament.status !== 'open') {
+    return NextResponse.json(
+      { error: 'Las inscripciones de este torneo no están abiertas.' },
+      { status: 409 },
+    );
+  }
+
   try {
     const supabase = getServiceClient();
 
+    // Cupos: contar SOLO equipos del torneo activo, y solo los ya pagados/free
+    // o pendientes recientes (los pending viejos sin pago se ignoran para no
+    // bloquear cupos por carritos abandonados).
     const { count, error: countErr } = await supabase
       .from('teams')
-      .select('id', { count: 'exact', head: true });
+      .select('id', { count: 'exact', head: true })
+      .eq('tournament_id', tournament.id)
+      .in('payment_status', ['paid', 'free']);
 
     if (countErr) {
       return NextResponse.json({ error: 'No pudimos verificar cupos' }, { status: 500 });
     }
 
-    if ((count ?? 0) >= MAX_TEAMS) {
+    if ((count ?? 0) >= tournament.max_teams) {
       return NextResponse.json(
         {
-          error: `Cupos completos (${MAX_TEAMS} equipos máx). Si tu registro fue cancelado por error, escribinos al Discord.`,
+          error: `Cupos completos (${tournament.max_teams} equipos máx).`,
         },
         { status: 409 },
       );
     }
 
-    // Block: si user ya tiene equipo como capitán, no permitir crear otro.
+    // Block: si user ya tiene equipo confirmado EN ESTE TORNEO, no permitir otro.
     const { count: existingCount } = await supabase
       .from('teams')
       .select('id', { count: 'exact', head: true })
-      .eq('captain_user_id', user.id);
+      .eq('captain_user_id', user.id)
+      .eq('tournament_id', tournament.id)
+      .in('payment_status', ['paid', 'free', 'pending']);
 
     if ((existingCount ?? 0) > 0) {
       return NextResponse.json(
-        { error: 'Ya creaste un equipo. No podés crear más de uno.' },
+        { error: 'Ya creaste un equipo en este torneo.' },
         { status: 409 },
       );
     }
+
+    const isPaid = Number(tournament.entry_fee_per_team_usd) > 0;
+    const paymentRef = randomUUID();
+
+    // payment_method viene del cliente: 'card' (Lemon Squeezy) o 'offline'
+    // (Western Union / Remitly / efectivo / transferencia, coordinado por
+    // WhatsApp con el organizador). En ambos casos el equipo se crea pending.
+    const requestedMethod =
+      (typeof (body as Record<string, unknown>).payment_method === 'string'
+        ? ((body as Record<string, unknown>).payment_method as string)
+        : 'card');
+    const paymentMethod: 'card' | 'offline' = isPaid && requestedMethod === 'offline' ? 'offline' : 'card';
+    const usesLemonSqueezy = isPaid && paymentMethod === 'card';
+
+    const baseInsert = {
+      ...parsed.data,
+      tournament_id: tournament.id,
+      captain_user_id: user.id,
+      payment_status: isPaid ? 'pending' : 'free',
+      payment_amount_usd: isPaid ? tournament.entry_fee_per_team_usd : 0,
+      payment_ref: usesLemonSqueezy ? paymentRef : null,
+      payment_provider: usesLemonSqueezy ? 'lemonsqueezy' : isPaid ? 'offline' : null,
+      payment_method: isPaid ? paymentMethod : null,
+    } as const;
 
     for (let attempt = 0; attempt < MAX_CODE_RETRIES; attempt++) {
       const join_code = generateJoinCode();
       const { data, error } = await supabase
         .from('teams')
-        .insert({ ...parsed.data, join_code, captain_user_id: user.id })
+        .insert({ ...baseInsert, join_code })
         .select('id, join_code')
         .single();
 
       if (!error && data) {
-        return NextResponse.json({ ok: true, join_code: data.join_code });
+        if (usesLemonSqueezy) {
+          try {
+            const checkout = await createCheckout({
+              tournament,
+              teamId: data.id,
+              paymentRef,
+              captainEmail: parsed.data.captain_email,
+              captainName: parsed.data.captain_name,
+              teamName: parsed.data.team_name,
+            });
+            return NextResponse.json({
+              ok: true,
+              join_code: data.join_code,
+              payment_required: true,
+              payment_method: 'card',
+              checkout_url: checkout.url,
+            });
+          } catch (paymentErr) {
+            const message =
+              paymentErr instanceof Error ? paymentErr.message : 'error pagos';
+            return NextResponse.json(
+              { error: `Equipo creado pero falló el checkout: ${message}` },
+              { status: 502 },
+            );
+          }
+        }
+
+        // Offline (WU / Remitly / cash / wire) o torneo gratis: el equipo
+        // queda registrado; el capitán coordina pago con el organizador via
+        // WhatsApp y este lo marca paid desde admin.
+        return NextResponse.json({
+          ok: true,
+          join_code: data.join_code,
+          payment_required: isPaid,
+          payment_method: isPaid ? 'offline' : null,
+        });
       }
 
       if (error?.code === '23505') {

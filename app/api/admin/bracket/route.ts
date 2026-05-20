@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isAuthed } from '@/lib/admin-auth';
 import { getServiceClient } from '@/lib/supabase';
+import { getActiveOrLatestTournament } from '@/lib/tournaments';
 
 export const runtime = 'nodejs';
 
@@ -58,6 +59,11 @@ export async function POST(request: Request) {
   }
 
   const supabase = getServiceClient();
+  const tournament = await getActiveOrLatestTournament();
+  if (!tournament) {
+    return NextResponse.json({ error: 'No hay torneo activo' }, { status: 409 });
+  }
+  const tid = tournament.id;
 
   try {
     if (parsed.data.action === 'set_teams') {
@@ -69,6 +75,7 @@ export async function POST(request: Request) {
           team_b_id,
           updated_at: new Date().toISOString(),
         })
+        .eq('tournament_id', tid)
         .eq('slot', slot);
       if (error) throw new Error(error.message);
       return NextResponse.json({ ok: true });
@@ -83,7 +90,11 @@ export async function POST(request: Request) {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from('matches').update(update).eq('slot', slot);
+      const { error } = await supabase
+        .from('matches')
+        .update(update)
+        .eq('tournament_id', tid)
+        .eq('slot', slot);
       if (error) throw new Error(error.message);
 
       // Auto-promote winners por la cadena cuartos -> semi -> final.
@@ -94,6 +105,7 @@ export async function POST(request: Request) {
           const { error: ec } = await supabase
             .from('matches')
             .update({ team_b_id: winner_id, updated_at: new Date().toISOString() })
+            .eq('tournament_id', tid)
             .eq('slot', targetSemi);
           if (ec) throw new Error(ec.message);
         }
@@ -104,6 +116,7 @@ export async function POST(request: Request) {
           const { error: e2 } = await supabase
             .from('matches')
             .update({ [finalSlot]: winner_id, updated_at: new Date().toISOString() })
+            .eq('tournament_id', tid)
             .eq('slot', 'final');
           if (e2) throw new Error(e2.message);
         }
@@ -117,6 +130,7 @@ export async function POST(request: Request) {
       const { error } = await supabase
         .from('matches')
         .update({ status, updated_at: new Date().toISOString() })
+        .eq('tournament_id', tid)
         .eq('slot', slot);
       if (error) throw new Error(error.message);
       return NextResponse.json({ ok: true });
@@ -132,6 +146,7 @@ export async function POST(request: Request) {
           status: 'pending',
           updated_at: new Date().toISOString(),
         })
+        .eq('tournament_id', tid)
         .in('slot', ['cuartos1', 'cuartos2', 'semi1', 'semi2', 'final']);
       if (error) throw new Error(error.message);
       return NextResponse.json({ ok: true });

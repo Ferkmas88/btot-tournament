@@ -67,9 +67,33 @@ function fieldError(name: keyof FormData, value: string): string | null {
 type Props = {
   prefillCaptainName?: string;
   prefillCaptainEmail?: string;
+  tournamentSlug?: string;
+  tournamentName?: string | null;
+  entryFeePerTeamUsd?: number;
+  entryFeePerPlayerUsd?: number;
+  teamSize?: number;
+  paymentMethods?: string[];
+  organizerName?: string | null;
+  organizerWhatsappHref?: string | null;
+  organizerWhatsappRaw?: string | null;
 };
 
-export default function RegisterWizard({ prefillCaptainName, prefillCaptainEmail }: Props = {}) {
+export default function RegisterWizard({
+  prefillCaptainName,
+  prefillCaptainEmail,
+  tournamentSlug,
+  tournamentName,
+  entryFeePerTeamUsd = 0,
+  entryFeePerPlayerUsd = 0,
+  teamSize = 5,
+  paymentMethods = ['card'],
+  organizerName,
+  organizerWhatsappHref,
+  organizerWhatsappRaw,
+}: Props = {}) {
+  const isPaid = Number(entryFeePerTeamUsd) > 0;
+  const offlineEnabled = isPaid && paymentMethods.includes('whatsapp_alt') && !!organizerWhatsappHref;
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'offline'>('card');
   const router = useRouter();
 
   const initial: FormData = {
@@ -148,6 +172,8 @@ export default function RegisterWizard({ prefillCaptainName, prefillCaptainEmail
     try {
       const payload: Record<string, string> = { ...data };
       if (!payload.referral_source) delete payload.referral_source;
+      if (isPaid) payload.payment_method = paymentMethod;
+      if (tournamentSlug) payload.tournament_slug = tournamentSlug;
 
       const res = await fetch('/api/register', {
         method: 'POST',
@@ -169,6 +195,16 @@ export default function RegisterWizard({ prefillCaptainName, prefillCaptainEmail
         } catch {
           /* ignore */
         }
+      }
+
+      // Torneo pago: redirigir al checkout hosted (Lemon Squeezy).
+      const checkoutUrl: string | undefined = json.checkout_url;
+      if (json.payment_required && checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
+
+      if (code) {
         router.push(`/equipo/${code}`);
         return;
       }
@@ -189,6 +225,80 @@ export default function RegisterWizard({ prefillCaptainName, prefillCaptainEmail
         {step === 1 && <Step1 {...stepProps} />}
         {step === 2 && <Step2 {...stepProps} />}
         {step === 3 && <Step3 {...stepProps} />}
+
+        {step === TOTAL_STEPS && isPaid && (
+          <div className="mt-8 border border-amber-gold/30 bg-black/30 p-5">
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-gold/80 mb-3">
+              Total a pagar
+            </div>
+            <div className="flex items-baseline gap-3 mb-1">
+              <span className="font-display text-3xl text-white">
+                USD ${Number(entryFeePerTeamUsd).toFixed(0)}
+              </span>
+              {Number(entryFeePerPlayerUsd) > 0 && (
+                <span className="font-mono text-xs text-white/55">
+                  ({teamSize} × USD ${Number(entryFeePerPlayerUsd).toFixed(0)}/jugador)
+                </span>
+              )}
+            </div>
+            <p className="text-white/55 text-xs mb-4">
+              El capitán paga el equipo completo. Los 4 jugadores no pagan por separado.
+            </p>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('card')}
+                className={`w-full flex items-center justify-between gap-3 border px-4 py-3 text-left transition ${
+                  paymentMethod === 'card'
+                    ? 'border-amber-gold bg-amber-gold/10'
+                    : 'border-white/15 hover:border-white/30'
+                }`}
+              >
+                <span>
+                  <span className="block text-white text-sm">Pagar con tarjeta</span>
+                  <span className="block font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
+                    Visa · Mastercard · vía Lemon Squeezy
+                  </span>
+                </span>
+                <span className="font-mono text-xs text-amber-gold">
+                  {paymentMethod === 'card' ? '●' : '○'}
+                </span>
+              </button>
+
+              {offlineEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('offline')}
+                  className={`w-full flex items-center justify-between gap-3 border px-4 py-3 text-left transition ${
+                    paymentMethod === 'offline'
+                      ? 'border-amber-gold bg-amber-gold/10'
+                      : 'border-white/15 hover:border-white/30'
+                  }`}
+                >
+                  <span>
+                    <span className="block text-white text-sm">Otro método (WhatsApp)</span>
+                    <span className="block font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
+                      Western Union · Remitly · efectivo · transferencia
+                    </span>
+                  </span>
+                  <span className="font-mono text-xs text-amber-gold">
+                    {paymentMethod === 'offline' ? '●' : '○'}
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {paymentMethod === 'offline' && organizerWhatsappRaw && (
+              <p className="text-white/65 text-xs mt-4">
+                Después de crear el equipo, coordinás el pago con{' '}
+                <span className="text-amber-gold">{organizerName ?? 'el organizador'}</span> al WhatsApp{' '}
+                <span className="font-mono">{organizerWhatsappRaw}</span>. Tu equipo queda reservado
+                hasta que se confirme el pago.
+              </p>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="mt-6 p-3 border border-blood bg-blood/10 text-blood-light text-sm font-mono">
@@ -217,7 +327,13 @@ export default function RegisterWizard({ prefillCaptainName, prefillCaptainEmail
               disabled={submitting}
               className="btn-primary disabled:opacity-50"
             >
-              {submitting ? 'Inscribiendo...' : 'Crear equipo'}
+              {submitting
+                ? 'Procesando...'
+                : isPaid
+                ? paymentMethod === 'card'
+                  ? `Ir a pagar — USD $${Number(entryFeePerTeamUsd).toFixed(0)} →`
+                  : 'Crear equipo (pago offline)'
+                : 'Crear equipo'}
             </button>
           )}
         </div>
