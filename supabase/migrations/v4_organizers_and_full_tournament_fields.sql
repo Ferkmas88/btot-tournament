@@ -81,6 +81,9 @@ update public.tournaments
   where entry_fee_per_team_usd = 0 and entry_fee_usd > 0;
 
 -- Drop entry_fee_usd legacy (renamed effectively a entry_fee_per_team_usd).
+-- La view active_tournament (v3) es `select *` y captura columnas al crearse,
+-- bloqueando el drop. La tiramos acá y la recreamos al final del archivo.
+drop view if exists public.active_tournament cascade;
 alter table public.tournaments drop column if exists entry_fee_usd;
 
 -- Prize pool — total + distribución como JSON.
@@ -184,3 +187,17 @@ begin
     alter table public.tournaments alter column organizer_id set not null;
   end if;
 end$$;
+
+-- -----------------------------------------
+-- Recrear active_tournament (dropeada arriba por dep en entry_fee_usd).
+-- Definición idéntica a v3 — `select *` ahora captura el schema nuevo.
+-- -----------------------------------------
+create or replace view public.active_tournament as
+  select *
+  from public.tournaments
+  where status in ('open', 'live')
+  order by starts_at desc nulls last, created_at desc
+  limit 1;
+
+revoke all on public.active_tournament from public;
+grant select on public.active_tournament to anon, authenticated;
