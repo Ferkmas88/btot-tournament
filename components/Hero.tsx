@@ -14,7 +14,7 @@ export default function Hero({ tournamentDate }: Props) {
     <section className="relative min-h-[94vh] overflow-hidden px-4 py-6 md:px-6 md:py-8">
       {/* Static fallback — shows if video blocked */}
       <div className="absolute inset-0 bg-[url('/generated/hero-lobby.png')] bg-cover bg-center opacity-65" />
-      {/* Video on top — hides itself on error */}
+      {/* Video on top — falls back to bg-image below if it fails to load */}
       <video
         className="absolute inset-0 h-full w-full object-cover opacity-65"
         autoPlay
@@ -23,7 +23,6 @@ export default function Hero({ tournamentDate }: Props) {
         playsInline
         preload="auto"
         aria-hidden="true"
-        onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none' }}
         poster="/generated/hero-lobby.png"
       >
         <source src="/hero-video.mp4" type="video/mp4" />
