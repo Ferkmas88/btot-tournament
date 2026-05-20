@@ -12,10 +12,22 @@ const menu = [
 export default function Hero({ tournamentDate }: Props) {
   return (
     <section className="relative min-h-[94vh] overflow-hidden px-4 py-6 md:px-6 md:py-8">
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-65"
-        style={{ backgroundImage: "url('/generated/hero-lobby.png')" }}
-      />
+      {/* Static fallback — shows if video blocked */}
+      <div className="absolute inset-0 bg-[url('/generated/hero-lobby.png')] bg-cover bg-center opacity-65" />
+      {/* Video on top — hides itself on error */}
+      <video
+        className="absolute inset-0 h-full w-full object-cover opacity-65"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none' }}
+        poster="/generated/hero-lobby.png"
+      >
+        <source src="/hero-video.mp4" type="video/mp4" />
+      </video>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(7,22,42,0.08),rgba(5,6,10,0.82)_62%,#05060a_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent to-ink-950" />
 
@@ -23,9 +35,9 @@ export default function Hero({ tournamentDate }: Props) {
         <aside className="angled-panel hidden self-stretch p-4 lg:block">
           <div className="mb-8 border-b border-white/10 pb-5">
             <img
-              src="/papaque-logo.png"
+              src="/papaque-logo-new.jpg"
               alt="Papaque · Torneo de Dota 2"
-              className="w-full max-w-[180px] mx-auto mb-3"
+              className="w-full max-w-[180px] mx-auto mb-3 rounded"
             />
             <div className="text-center font-mono text-[10px] uppercase tracking-[0.24em] text-amber-gold">
               Cuba Lobby
@@ -65,6 +77,15 @@ export default function Hero({ tournamentDate }: Props) {
             ))}
           </div>
 
+          {/* Mobile: countdown compact strip */}
+          <div className="lg:hidden mb-5 flex items-center justify-between gap-3 border border-white/10 bg-black/40 px-4 py-3">
+            <div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/40">Próxima partida</div>
+              <div className="font-display text-lg text-white">Cuenta regresiva</div>
+            </div>
+            <Countdown isoDate={tournamentDate} compact />
+          </div>
+
           <div className="max-w-4xl">
             <a
               href="/round-robin"
@@ -86,7 +107,7 @@ export default function Hero({ tournamentDate }: Props) {
                     'radial-gradient(ellipse at 30% 50%, rgba(212,160,23,0.55), transparent 60%)',
                 }}
               />
-              <h1 className="font-display text-[3.2rem] leading-[1] tracking-[0.04em] text-white sm:text-6xl md:text-[7.5rem] lg:text-[8.5rem]">
+              <h1 className="font-display text-[3.2rem] leading-[1] tracking-[0.04em] text-white sm:text-[5rem] lg:text-[8.5rem]">
                 <span className="shine-text">PAPAQUE</span>
               </h1>
               <div className="mt-3 flex items-center gap-3">
@@ -98,17 +119,17 @@ export default function Hero({ tournamentDate }: Props) {
               </div>
             </div>
 
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/76 md:text-xl">
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/76 md:text-xl">
               Un lobby cubano para equipos que quieren jugar serio, con estetica de arena oscura,
               bracket vivo y la energia de los LAN de barrio llevada al online.
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <a href="/round-robin" className="btn-primary inline-flex items-center gap-2">
+              <a href="/round-robin" className="btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.95)] animate-pulse" />
                 Ver resultados en vivo →
               </a>
-              <a href="/inscribirse" className="btn-secondary">
+              <a href="/inscribirse" className="btn-secondary w-full text-center sm:w-auto">
                 Inscribir equipo
               </a>
               <a href="#formato" className="font-mono text-xs uppercase tracking-[0.2em] text-white/60 hover:text-white">
@@ -124,7 +145,7 @@ export default function Hero({ tournamentDate }: Props) {
           </div>
         </div>
 
-        <aside className="angled-panel self-end p-4 md:p-5">
+        <aside className="angled-panel hidden self-end p-4 md:p-5 lg:block">
           <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
             <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">

@@ -14,6 +14,17 @@ export default function HomePage() {
   return (
     <main>
       <Hero tournamentDate={tournamentDate} />
+
+      {/* Poster LATAM teams */}
+      <section className="relative overflow-hidden">
+        <img
+          src="/poster-teams.jpg"
+          alt="P'APA QUE!? — Equipos LATAM"
+          className="w-full object-cover max-h-[480px] object-top"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-transparent to-ink-950/60" />
+      </section>
+
       <UpcomingMatch />
       <LiveStats />
       <Prize />
