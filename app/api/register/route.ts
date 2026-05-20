@@ -109,16 +109,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const isPaid = Number(tournament.entry_fee_usd) > 0;
+    const isPaid = Number(tournament.entry_fee_per_team_usd) > 0;
     const paymentRef = randomUUID();
+
+    // payment_method viene del cliente: 'card' (Lemon Squeezy) o 'offline'
+    // (Western Union / Remitly / efectivo / transferencia, coordinado por
+    // WhatsApp con el organizador). En ambos casos el equipo se crea pending.
+    const requestedMethod =
+      (typeof (body as Record<string, unknown>).payment_method === 'string'
+        ? ((body as Record<string, unknown>).payment_method as string)
+        : 'card');
+    const paymentMethod: 'card' | 'offline' = isPaid && requestedMethod === 'offline' ? 'offline' : 'card';
+    const usesLemonSqueezy = isPaid && paymentMethod === 'card';
+
     const baseInsert = {
       ...parsed.data,
       tournament_id: tournament.id,
       captain_user_id: user.id,
       payment_status: isPaid ? 'pending' : 'free',
-      payment_amount_usd: isPaid ? tournament.entry_fee_usd : 0,
-      payment_ref: isPaid ? paymentRef : null,
-      payment_provider: isPaid ? 'lemonsqueezy' : null,
+      payment_amount_usd: isPaid ? tournament.entry_fee_per_team_usd : 0,
+      payment_ref: usesLemonSqueezy ? paymentRef : null,
+      payment_provider: usesLemonSqueezy ? 'lemonsqueezy' : isPaid ? 'offline' : null,
+      payment_method: isPaid ? paymentMethod : null,
     } as const;
 
     for (let attempt = 0; attempt < MAX_CODE_RETRIES; attempt++) {
@@ -130,7 +142,7 @@ export async function POST(request: Request) {
         .single();
 
       if (!error && data) {
-        if (isPaid) {
+        if (usesLemonSqueezy) {
           try {
             const checkout = await createCheckout({
               tournament,
@@ -144,13 +156,12 @@ export async function POST(request: Request) {
               ok: true,
               join_code: data.join_code,
               payment_required: true,
+              payment_method: 'card',
               checkout_url: checkout.url,
             });
           } catch (paymentErr) {
             const message =
               paymentErr instanceof Error ? paymentErr.message : 'error pagos';
-            // El equipo quedó como pending. Idealmente el user puede reintentar
-            // checkout desde /equipo/{code}, pero por ahora devolvemos el error.
             return NextResponse.json(
               { error: `Equipo creado pero falló el checkout: ${message}` },
               { status: 502 },
@@ -158,10 +169,14 @@ export async function POST(request: Request) {
           }
         }
 
+        // Offline (WU / Remitly / cash / wire) o torneo gratis: el equipo
+        // queda registrado; el capitán coordina pago con el organizador via
+        // WhatsApp y este lo marca paid desde admin.
         return NextResponse.json({
           ok: true,
           join_code: data.join_code,
-          payment_required: false,
+          payment_required: isPaid,
+          payment_method: isPaid ? 'offline' : null,
         });
       }
 

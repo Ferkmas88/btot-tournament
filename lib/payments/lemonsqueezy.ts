@@ -32,8 +32,9 @@ async function createCheckout(input: CheckoutInput): Promise<CheckoutOutput> {
   const storeId = requireEnv('LEMONSQUEEZY_STORE_ID');
   const variantId = requireEnv('LEMONSQUEEZY_VARIANT_ID_TOURNAMENT_ENTRY');
 
-  // LS espera precio en cents.
-  const priceCents = Math.round(Number(input.tournament.entry_fee_usd) * 100);
+  // LS espera precio en cents. Cobramos POR EQUIPO (1 transaction = 1 equipo).
+  // El precio por jugador es solo display; el capitán paga el total del equipo.
+  const priceCents = Math.round(Number(input.tournament.entry_fee_per_team_usd) * 100);
 
   const payload = {
     data: {
